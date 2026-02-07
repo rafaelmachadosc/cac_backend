@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agendamentos – CAC CORAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #70e000;
+      --primary-dark: #5fc500;
+      --primary-light: rgba(112, 224, 0, 0.1);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.1);
+      --bg-main: #403d39;
+      --bg-card: #252422;
+      --bg-elevated: #2d2a26;
+      --text-primary: #ffffff;
+      --text-secondary: #ffffff;
+      --text-muted: #ffffff;
+      --border: rgba(112, 224, 0, 0.2);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 20px rgba(112, 224, 0, 0.3);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header com efeito 3D */
+    .header {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      transform: perspective(1000px) rotateX(0deg);
+      transition: transform 0.3s ease;
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    .header:hover {
+      transform: perspective(1000px) rotateX(1deg);
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, #5fc500 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .alert-box {
+      background: linear-gradient(135deg, rgba(112, 224, 0, 0.15) 0%, rgba(112, 224, 0, 0.05) 100%);
+      border: 1px solid var(--primary);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .alert-box ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .alert-box li {
+      padding: 2px 0;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .alert-box strong {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Cards principais */
+    .card {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0.5;
+    }
+
+    /* Labels e inputs */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: capitalize;
+      letter-spacing: 0.2px;
+    }
+
+    input:not([type="checkbox"]),
+    select {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    input:not([type="checkbox"]):focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    input:not([type="checkbox"]):hover {
+      border-color: var(--primary);
+    }
+
+    /* Grid responsivo */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .grid-full {
+      grid-column: 1 / -1;
+    }
+
+    /* Checkboxes circulares com efeito 3D */
+    input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: perspective(100px) translateZ(0);
+      box-shadow: 0 2px 8px rgba(112, 224, 0, 0.2);
+    }
+
+    input[type="checkbox"]:hover {
+      transform: perspective(100px) translateZ(4px) scale(1.1);
+      box-shadow: 0 4px 16px rgba(112, 224, 0, 0.4);
+      border-color: var(--primary-dark);
+    }
+
+    input[type="checkbox"]:checked {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-glow);
+      transform: perspective(100px) translateZ(4px) scale(1.05);
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      width: 8px;
+      height: 8px;
+      background: var(--bg-main);
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 12px;
+      transition: background 0.2s;
+      font-size: 13px;
+    }
+
+    .checkbox-label:hover {
+      background: rgba(112, 224, 0, 0.05);
+    }
+
+    /* Time slots grid com efeito 3D */
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .slot {
+      padding: 12px 10px;
+      border-radius: 16px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      border: 2px solid transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      transform: perspective(200px) translateZ(0);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .slot::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .slot:hover::before {
+      left: 100%;
+    }
+
+    .slot.available {
+      background: linear-gradient(135deg, rgba(112, 224, 0, 0.15) 0%, rgba(112, 224, 0, 0.05) 100%);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .slot.available:hover {
+      transform: perspective(200px) translateZ(8px) scale(1.05);
+      box-shadow: var(--shadow-glow);
+      background: linear-gradient(135deg, rgba(112, 224, 0, 0.25) 0%, rgba(112, 224, 0, 0.15) 100%);
+    }
+
+    .slot.selected {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-color: var(--primary);
+      color: var(--bg-main);
+      transform: perspective(200px) translateZ(12px) scale(1.08);
+      box-shadow: var(--shadow-glow);
+      font-weight: 700;
+    }
+
+    .slot.taken,
+    .slot.blocked {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #ff6b6b;
+      cursor: not-allowed;
+      opacity: 0.7;
+      transform: perspective(200px) translateZ(-4px);
+    }
+
+    /* Botões com efeito 3D */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: perspective(200px) translateZ(0);
+      box-shadow: var(--shadow-md);
+      text-transform: capitalize;
+      letter-spacing: 0.3px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: var(--bg-main);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-primary:hover {
+      transform: perspective(200px) translateZ(8px) scale(1.05);
+      box-shadow: 0 0 30px rgba(112, 224, 0, 0.5);
+    }
+
+    .btn-primary:active {
+      transform: perspective(200px) translateZ(4px) scale(0.98);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      transform: perspective(200px) translateZ(8px) scale(1.05);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    /* Calendário customizado com estilo 3D */
+    .date-picker-container {
+      position: relative;
+    }
+
+    .date-picker-input {
+      width: 100%;
+      height: 52px;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      color: var(--text-primary);
+      padding: 0 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .date-picker-input:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .date-picker-popup {
+      position: fixed;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow-lg);
+      z-index: 10000;
+      display: none;
+      width: 320px;
+      max-height: calc(100vh - 40px);
+      overflow: visible;
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      transform: perspective(1000px) rotateX(-5deg) translateY(-10px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .date-picker-popup.show {
+      display: block;
+      transform: perspective(1000px) rotateX(0deg) translateY(0);
+      opacity: 1;
+    }
+
+    .date-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .date-picker-nav {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: bold;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      transform: perspective(100px) translateZ(0);
+    }
+
+    .date-picker-nav:hover {
+      background: var(--primary);
+      color: var(--bg-main);
+      transform: perspective(100px) translateZ(8px) scale(1.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .date-picker-month-year {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: capitalize;
+    }
+
+    .date-picker-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .date-picker-weekday {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding: 6px 4px;
+    }
+
+    .date-picker-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 0;
+    }
+
+    .date-picker-day {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      text-align: center;
+      padding: 6px;
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: perspective(100px) translateZ(0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+    }
+
+    .date-picker-day:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      transform: perspective(100px) translateZ(8px) scale(1.15);
+      color: var(--primary);
+    }
+
+    .date-picker-day.today {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .date-picker-day.selected {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-color: var(--primary);
+      color: var(--bg-main);
+      transform: perspective(100px) translateZ(12px) scale(1.2);
+      box-shadow: var(--shadow-glow);
+      font-weight: 700;
+    }
+
+    .date-picker-day.other-month {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .date-picker-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .date-picker-footer-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+
+    .date-picker-footer-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Select customizado */
+    .select-wrap {
+      position: relative;
+    }
+
+    .select-display {
+      width: 100%;
+      height: 52px;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 0 20px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .select-display:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .select-display::after {
+      content: "▾";
+      font-size: 20px;
+      color: var(--primary);
+      transition: transform 0.3s;
+    }
+
+    .select-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .select-backdrop.show {
+      display: flex;
+    }
+
+    .select-card {
+      width: min(500px, 90vw);
+      background: var(--bg-card);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 2px solid var(--border);
+      transform: perspective(1000px) rotateX(0deg) scale(0.9);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .select-backdrop.show .select-card {
+      transform: perspective(1000px) rotateX(0deg) scale(1);
+      opacity: 1;
+    }
+
+    .select-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #1a1a1a;
+      font-weight: 700;
+      padding: 16px 20px;
+      font-size: 14px;
+      text-transform: capitalize;
+      letter-spacing: 0.3px;
+    }
+
+    .select-list {
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .select-opt {
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 3px 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .select-opt:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      transform: translateX(8px);
+    }
+
+    .select-opt.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+      border-left: 4px solid var(--primary);
+    }
+
+    /* Flags section */
+    .flags-section {
+      padding: 16px;
+      border: 2px dashed var(--border);
+      border-radius: 20px;
+      background: var(--bg-elevated);
+      margin-top: 14px;
+    }
+
+    .flags-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    /* Mensagens */
+    .message {
+      padding: 12px 16px;
+      border-radius: 16px;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .message.success {
+      background: rgba(112, 224, 0, 0.15);
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      display: block;
+    }
+
+    .message.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid var(--danger);
+      color: #ff6b6b;
+      display: block;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(500px, 90vw);
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1000px) rotateX(10deg) scale(0.9);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-backdrop.show .modal-card {
+      transform: perspective(1000px) rotateX(0deg) scale(1);
+      opacity: 1;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .modal-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    /* Hint text */
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* Section divider */
+    .section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px dashed var(--border);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--primary);
+      text-transform: capitalize;
+      letter-spacing: 0.3px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 20px;
+        border-radius: 20px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .slot-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 8px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+
+    /* Loading state */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(112, 224, 0, 0.3);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Scrollbar customizada */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-main);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Input hidden para nativos */
+    .select-native-hidden {
+      display: none !important;
+    }
+
+    input[type="hidden"] {
+      display: none;
+    }
+
+    /* Rodapé */
+    .footer {
+      margin-top: 32px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .footer-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .footer-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 2px solid var(--primary);
+      background: rgba(112, 224, 0, 0.05);
+    }
+
+    .footer-whatsapp:hover {
+      background: var(--primary);
+      color: var(--bg-main);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(112, 224, 0, 0.3);
+    }
+
+    .whatsapp-icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Centro de Avaliação de Condutores - CORAL</h1>
+      <div class="alert-box">
+        <div>
+          <ul>
+            <li><strong>ATENÇÃO!</strong> Certifique-se que foi sorteado para o nosso CAC antes de agendar</li>
+            <li>Pagamento no dia (PIX ou Dinheiro)</li>
+          </ul>
+        </div>
+        <a id="btn-address" class="btn btn-secondary" target="_blank" rel="noopener" style="text-decoration: none;">Endereço</a>
+      </div>
+    </div>
+
+    <!-- Formulário Principal -->
+    <form id="form" class="card">
+      <div class="grid">
+        <!-- Nome Completo -->
+        <div class="grid-full">
+          <div class="form-group">
+            <label>Nome completo *</label>
+            <input type="text" name="FullName" required placeholder="Informe seu nome completo">
+          </div>
+        </div>
+
+        <!-- Telefone -->
+        <div class="form-group">
+          <label>Telefone *</label>
+          <input type="text" name="Phone" required placeholder="(00) 00000-0000" 
+                 inputmode="numeric" pattern="\d{11}" maxlength="11" autocomplete="tel">
+        </div>
+
+        <!-- CPF -->
+        <div class="form-group">
+          <label>CPF *</label>
+          <input type="text" name="CPF" required placeholder="000.000.000-00"
+                 inputmode="numeric" pattern="\d{11}" maxlength="11" autocomplete="on">
+        </div>
+
+        <!-- Taxa -->
+        <div class="form-group">
+          <label>Taxa *</label>
+          <div class="select-wrap" data-select-for="Taxa">
+            <button type="button" class="select-display" id="ui-Taxa">Confirme o valor</button>
+            <select name="Taxa" required class="select-native-hidden" data-enhance="modal">
+              <option value="">Confirme o valor</option>
+              <option>Particular - R$ 86,03</option>
+              <option>Autoescola Vila Nova - R$ 86,03</option>
+              <option>Autoescola Jaraguá - R$ 86,03</option>
+              <option>Autoescola Matias Nunes Ltda - R$ 86,03</option>
+              <option>Autoescola Direção - R$ 86,03</option>
+              <option>Autoescola NC - R$ 86,03</option>
+              <option>Autoescola Ideal - R$ 86,03</option>
+              <option>Autoescola Figueira - R$ 86,03</option>
+              <option>Autoescola Três Rios - R$ 86,03</option>
+              <option>Autoescola Go! - R$ 86,03</option>
+              <option>Autoescola Sinal Verde (Centro) - R$ 86,03</option>
+              <option>Autoescola Sinal Verde (Barra) - R$ 86,03</option>
+              <option>Autoescola Conexão - R$ 86,03</option>
+              <option>Autoescola Amizade - R$ 86,03</option>
+              <option>Autoescola Transfoco - R$ 86,03</option>
+              <option>Autoescola Corupá - R$ 86,03</option>
+              <option>Autoescola Hansa - R$ 86,03</option>
+              <option>Autoescola Schroeder - R$ 86,03</option>
+              <option>Autoescola Via Única - R$ 86,03</option>
+              <option>Autoescola Guaramirim - R$ 86,03</option>
+              <option>Autoescola Pé Na Estrada - R$ 86,03</option>
+              <option>Autoescola Guará - R$ 86,03</option>
+              <option>Autoescola Piloto - R$ 86,03</option>
+              <option>Autoescola Cidade - R$ 86,03</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Categoria -->
+        <div class="form-group">
+          <label>Categoria *</label>
+          <div class="select-wrap" data-select-for="Categoria">
+            <button type="button" class="select-display" id="ui-Category">Selecione</button>
+            <select name="Category" id="category" required class="select-native-hidden" data-enhance="modal">
+              <option value="">Selecione</option>
+              <option>A</option>
+              <option>B</option>
+              <option>C</option>
+              <option>D</option>
+              <option>E</option>
+              <option>AB</option>
+              <option>AC</option>
+              <option>AD</option>
+              <option>AE</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div class="grid-full">
+          <div class="form-group">
+            <label>Data *</label>
+            <div class="date-picker-container">
+              <input type="text" name="Date" id="datePicker" class="date-picker-input" readonly required placeholder="Selecione uma data">
+              <input type="hidden" name="Date" id="datePickerHidden" required>
+              <div id="datePickerPopup" class="date-picker-popup">
+                <div class="date-picker-header">
+                  <button class="date-picker-nav" id="prevMonth" type="button">‹</button>
+                  <span class="date-picker-month-year" id="monthYear"></span>
+                  <button class="date-picker-nav" id="nextMonth" type="button">›</button>
+                </div>
+                <div class="date-picker-weekdays">
+                  <div class="date-picker-weekday">D</div>
+                  <div class="date-picker-weekday">S</div>
+                  <div class="date-picker-weekday">T</div>
+                  <div class="date-picker-weekday">Q</div>
+                  <div class="date-picker-weekday">Q</div>
+                  <div class="date-picker-weekday">S</div>
+                  <div class="date-picker-weekday">S</div>
+                </div>
+                <div class="date-picker-days" id="datePickerDays"></div>
+              </div>
+            </div>
+            <div class="hint">Segunda e Terça: 10:00 as 11:50 - 13:30 as 16:00</div>
+          </div>
+        </div>
+
+        <!-- Horários -->
+        <div class="grid-full">
+          <div class="form-group">
+            <label>Horário *</label>
+            <input type="hidden" name="Time" id="timeValue" required>
+            <div id="slotGrid" class="slot-grid"></div>
+            <div class="hint" id="slotHint">Selecione uma data primeiro</div>
+          </div>
+        </div>
+
+        <!-- Flags -->
+        <div class="grid-full">
+          <div class="flags-section">
+            <label style="margin-bottom: 0;">Confirmações necessárias</label>
+            <div class="flags-grid">
+              <label class="checkbox-label">
+                <input type="checkbox" name="Foto" id="foto">
+                <span>Foto</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="Psicotecnico" id="psi">
+                <span>Psicotécnico <span class="hint">(1° CNH - EAR)</span></span>
+              </label>
+              <label class="checkbox-label" id="tox-wrap" style="display: none;">
+                <input type="checkbox" name="Toxicologico" id="tox">
+                <span>Toxicológico <span class="hint">(validade 3 meses)</span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões de ação -->
+      <div class="btn-group">
+        <button type="submit" class="btn btn-primary">Agendar</button>
+        <a class="btn btn-secondary" id="download-quest" href="#" target="_blank" style="text-decoration: none;">Imprimir Questionário</a>
+        <a class="btn btn-secondary" id="download-confirm" href="#" target="_blank" style="display: none; text-decoration: none;">Baixar Confirmação</a>
+      </div>
+
+      <div id="msg" class="message"></div>
+    </form>
+
+    <!-- Seção Reagendar/Cancelar -->
+    <div class="section">
+      <div class="card">
+        <h2 class="section-title">>>> Reagendar ou Cancelar <<<</h2>
+        <div class="grid">
+          <div class="form-group">
+            <label>CPF (confirmação de identidade) *</label>
+            <input type="text" id="m-cpf" placeholder="000.000.000-00">
+          </div>
+          <div class="form-group">
+            <label>Telefone (confirmação) *</label>
+            <input type="text" id="m-phone" placeholder="(00) 00000-0000">
+          </div>
+          <div class="form-group">
+            <label>Nova data (reagendar)</label>
+            <input type="date" id="m-date">
+            <div class="hint">Carregue a nova data para escolher um horário</div>
+          </div>
+          <div class="form-group">
+            <label>Novo horário</label>
+            <input type="hidden" id="m-time-value">
+            <div id="m-slot-grid" class="slot-grid"></div>
+            <div class="hint" id="m-slot-hint">Selecione a nova data</div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button id="btn-reschedule" type="button" class="btn btn-primary">Reagendar</button>
+          <button id="btn-cancel" type="button" class="btn btn-secondary">Cancelar</button>
+        </div>
+        <div id="m-msg" class="message"></div>
+      </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+      <p class="footer-text">Softwerk Solutions</p>
+      <a href="https://w.app/softwerksolutions" 
+         target="_blank" 
+         rel="noopener noreferrer" 
+         class="footer-whatsapp">
+        <svg class="whatsapp-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1-.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.372a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+        WhatsApp
+      </a>
+    </footer>
+  </div>
+
+  <!-- Modal Questionário -->
+  <div id="quest-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <h3 class="modal-title">A T E N Ç Ã O</h3>
+      <p class="modal-text">PARA CONCLUIR O AGENDAMENTO É OBRIGATÓRIO IMPRIMIR O <strong>QUESTIONÁRIO</strong>, PREENCHER E TRAZER NA DATA DO EXAME.</p>
+      <div class="modal-actions">
+        <a id="quest-download" class="btn btn-primary" target="_blank" rel="noopener" style="text-decoration: none;">Baixar e Imprimir</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Data Bloqueada -->
+  <div id="blocked-date-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <h3 class="modal-title">Data Indisponível</h3>
+      <p class="modal-text">Não estaremos atendendo neste dia, tente outra data.</p>
+      <div class="modal-actions">
+        <button id="close-blocked-modal" class="btn btn-primary">Entendi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmação de Reagendamento -->
+  <div id="reschedule-confirm-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <h3 class="modal-title">Reagendamento Confirmado</h3>
+      <div class="modal-text" id="reschedule-confirm-content">
+        <p><strong>Agendamento reagendado com sucesso!</strong></p>
+        <p style="margin-top: 15px;">
+          <strong>Horário anterior:</strong><br>
+          <span id="reschedule-old-date-time"></span>
+        </p>
+        <p style="margin-top: 15px;">
+          <strong>Novo horário:</strong><br>
+          <span id="reschedule-new-date-time"></span>
+        </p>
+        <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+          O horário anterior foi liberado e o novo horário foi reservado.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button id="close-reschedule-confirm-modal" class="btn btn-primary">Entendi</button>
+        <a id="reschedule-download-confirm" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: none;">Baixar Confirmação</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Select Customizado -->
+  <div id="select-modal" class="select-backdrop" aria-hidden="true">
+    <div class="select-card">
+      <div class="select-header" id="select-title">Selecionar</div>
+      <div class="select-list" id="select-list"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== CONFIGURAÇÃO ====================
+    const API_BASE = (location.origin && location.origin.startsWith('http')) ? '' : 'https://caccoral.site';
+    const MAPS_URL = 'https://maps.app.goo.gl/h3QPY2kgzPVSxmJv8?g_st=awb';
+    
+    document.getElementById('btn-address').href = MAPS_URL;
+    document.getElementById('download-quest').href = API_BASE + '/questionario/download';
+
+    // ==================== CALENDÁRIO PERSONALIZADO ====================
+    const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    
+    let currentCalendarDate = new Date();
+    let selectedDate = null;
+
+    function formatDate(date) {
+      const z = n => String(n).padStart(2, '0');
+      return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}`;
+    }
+
+    function isToday(date) {
+      const today = new Date();
+      return date.getDate() === today.getDate() &&
+             date.getMonth() === today.getMonth() &&
+             date.getFullYear() === today.getFullYear();
+    }
+
+    function isSelected(date) {
+      if (!selectedDate) return false;
+      return date.getDate() === selectedDate.getDate() &&
+             date.getMonth() === selectedDate.getMonth() &&
+             date.getFullYear() === selectedDate.getFullYear();
+    }
+
+    function renderCalendar() {
+      const daysContainer = document.getElementById('datePickerDays');
+      const monthYearEl = document.getElementById('monthYear');
+      if (!daysContainer || !monthYearEl) return;
+
+      monthYearEl.textContent = `${months[currentCalendarDate.getMonth()]} de ${currentCalendarDate.getFullYear()}`;
+      daysContainer.innerHTML = '';
+
+      const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+      const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+      const startDay = firstDay.getDay();
+      const prevMonthLastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 0);
+
+      // Dias do mês anterior
+      for (let i = startDay - 1; i >= 0; i--) {
+        const day = prevMonthLastDay.getDate() - i;
+        const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() - 1, day);
+        const btn = document.createElement('button');
+        btn.className = 'date-picker-day other-month';
+        btn.textContent = day;
+        btn.type = 'button';
+        btn.onclick = () => selectDate(date);
+        daysContainer.appendChild(btn);
+      }
+
+      // Dias do mês atual
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
+        const btn = document.createElement('button');
+        btn.className = 'date-picker-day';
+        btn.textContent = day;
+        btn.type = 'button';
+
+        if (isToday(date)) btn.classList.add('today');
+        if (isSelected(date)) btn.classList.add('selected');
+
+        btn.onclick = () => selectDate(date);
+        daysContainer.appendChild(btn);
+      }
+
+      // Dias do próximo mês
+      const remainingDays = 42 - daysContainer.children.length;
+      for (let day = 1; day <= remainingDays; day++) {
+        const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, day);
+        const btn = document.createElement('button');
+        btn.className = 'date-picker-day other-month';
+        btn.textContent = day;
+        btn.type = 'button';
+        btn.onclick = () => selectDate(date);
+        daysContainer.appendChild(btn);
+      }
+    }
+
+    // ==================== CARREGAR SLOTS ====================
+    function loadSlotsForDate(dateString) {
+      const grid = document.getElementById('slotGrid');
+      const slotHint = document.getElementById('slotHint');
+      const timeValue = document.getElementById('timeValue');
+      
+      if (!grid || !slotHint) return;
+      
+      if (!dateString) {
+        slotHint.textContent = 'Selecione uma data primeiro';
+        slotHint.className = 'hint';
+        return;
+      }
+      
+      slotHint.textContent = 'Carregando horários...';
+      slotHint.className = 'hint';
+      grid.innerHTML = '';
+      if (timeValue) timeValue.value = '';
+      
+      const t1 = Date.now();
+      const t2 = performance.now();
+      const t3 = Math.random();
+      const url = `${API_BASE}/slots?date=${encodeURIComponent(dateString)}&_t1=${t1}&_t2=${t2}&_t3=${t3}&nocache=true`;
+      
+      console.log('🔗 Fazendo requisição para:', url);
+      fetch(url, { 
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'omit',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
+        .then(async res => {
+          console.log('📡 Resposta recebida:', res.status, res.statusText);
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('❌ Erro HTTP:', res.status, errorText);
+            throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log('✅ JSON recebido:', data);
+          const slots = data.slots || [];
+          
+          console.log('📅 Slots recebidos para data:', dateString);
+          console.log('📦 Total de slots:', slots.length);
+          if (slots.length > 0) {
+            console.log('🔍 Primeiro slot:', slots[0]);
+            console.log('🔍 Último slot:', slots[slots.length - 1]);
+          } else {
+            console.log('⚠️ Nenhum slot disponível para esta data');
+          }
+          
+          // Verificar se todos estão bloqueados (data bloqueada)
+          // Um dia está bloqueado se todos os slots têm blocked=true
+          const allBlocked = slots.length > 0 && slots.every(s => {
+            const isBlocked = s.blocked === true || s.blocked === 'true' || s.blocked === 1 || 
+                            String(s.blocked || '').toLowerCase() === 'true';
+            return isBlocked;
+          });
+          
+          console.log('🚫 Data bloqueada?', allBlocked);
+          
+          if (allBlocked && slots.length > 0) {
+            console.log('🚫 Exibindo modal de data bloqueada');
+            const timeValue = document.getElementById('timeValue');
+            if (timeValue) timeValue.value = '';
+            grid.innerHTML = '';
+            slotHint.textContent = 'Selecione uma data primeiro';
+            showBlockedDateModal();
+            const datePicker = document.getElementById('datePicker');
+            const datePickerHidden = document.getElementById('datePickerHidden');
+            if (datePicker) datePicker.value = '';
+            if (datePickerHidden) datePickerHidden.value = '';
+            selectedDate = null;
+            renderCalendar();
+          } else {
+            renderSlots(slots);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Erro ao carregar horários:', error);
+          console.error('❌ Detalhes do erro:', error.message, error.stack);
+          slotHint.textContent = `Erro ao carregar horários: ${error.message || 'Erro desconhecido'}. Tente novamente.`;
+          slotHint.className = 'hint';
+        });
+    }
+
+    function selectDate(date) {
+      selectedDate = date;
+      const datePicker = document.getElementById('datePicker');
+      const datePickerHidden = document.getElementById('datePickerHidden');
+      const dateString = formatDate(date);
+      
+      if (datePicker) datePicker.value = dateString;
+      if (datePickerHidden) {
+        datePickerHidden.value = dateString;
+        datePickerHidden.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      if (date.getMonth() !== currentCalendarDate.getMonth() ||
+          date.getFullYear() !== currentCalendarDate.getFullYear()) {
+        currentCalendarDate = new Date(date);
+        renderCalendar();
+      } else {
+        renderCalendar();
+      }
+
+      const popup = document.getElementById('datePickerPopup');
+      if (popup) popup.classList.remove('show');
+      
+      loadSlotsForDate(dateString);
+    }
+
+    // ==================== RENDERIZAR SLOTS ====================
+    function renderSlots(slots) {
+      const grid = document.getElementById('slotGrid');
+      const slotHint = document.getElementById('slotHint');
+      const timeValue = document.getElementById('timeValue');
+      
+      if (!grid || !slotHint) return;
+      
+      grid.innerHTML = '';
+      if (timeValue) timeValue.value = '';
+      
+      if (!slots.length) {
+        slotHint.textContent = 'Não atendemos no dia selecionado.';
+        slotHint.className = 'hint';
+        return;
+      }
+      
+      slotHint.textContent = 'Verde: Disponível | Vermelho: Ocupado/Bloqueado';
+      slotHint.className = 'hint';
+      
+      slots.forEach(s => {
+        const btn = document.createElement('div');
+        const isBlocked = s.blocked === true || s.blocked === 'true' || s.blocked === 1 || 
+                         String(s.blocked || '').toLowerCase() === 'true';
+        const isTaken = s.taken === true || s.taken === 'true' || s.taken === 1 || 
+                       String(s.taken || '').toLowerCase() === 'true';
+        
+        const slotClass = isBlocked ? 'blocked' : (isTaken ? 'taken' : 'available');
+        btn.className = `slot ${slotClass}`;
+        btn.textContent = s.label;
+        btn.dataset.time = s.time;
+        
+        if (!isTaken && !isBlocked) {
+          btn.addEventListener('click', () => {
+            [...grid.querySelectorAll('.slot.selected')].forEach(el => el.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (timeValue) timeValue.value = s.time;
+          });
+        } else {
+          btn.style.cursor = 'not-allowed';
+          btn.style.pointerEvents = 'none';
+        }
+        grid.appendChild(btn);
+      });
+    }
+
+    // ==================== INICIALIZAÇÃO CALENDÁRIO ====================
+    document.addEventListener('DOMContentLoaded', function() {
+      const datePicker = document.getElementById('datePicker');
+      const popup = document.getElementById('datePickerPopup');
+      const prevBtn = document.getElementById('prevMonth');
+      const nextBtn = document.getElementById('nextMonth');
+
+      if (!datePicker || !popup) return;
+
+      renderCalendar();
+
+      datePicker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isShowing = popup.classList.contains('show');
+        if (!isShowing) {
+          // Calcular posição para centralizar o calendário na tela
+          const rect = datePicker.getBoundingClientRect();
+          const popupWidth = 320;
+          const popupHeight = 400; // altura aproximada
+          const left = (window.innerWidth - popupWidth) / 2;
+          const top = Math.max(20, (window.innerHeight - popupHeight) / 2);
+          
+          popup.style.left = left + 'px';
+          popup.style.top = top + 'px';
+        }
+        popup.classList.toggle('show');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.date-picker-container')) {
+          popup.classList.remove('show');
+        }
+      });
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          currentCalendarDate.setDate(1);
+          currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+          renderCalendar();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          currentCalendarDate.setDate(1);
+          currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+          renderCalendar();
+        });
+      }
+    });
+
+    // ==================== FLAGS (Foto/Psicotécnico/Toxicológico) ====================
+    const selCategory = document.getElementById('category');
+    const flagsBox = document.querySelector('.flags-section');
+    const toxWrap = document.getElementById('tox-wrap');
+    const foto = document.getElementById('foto');
+    const psi = document.getElementById('psi');
+    const tox = document.getElementById('tox');
+
+    const CATS_SEM_TOX = new Set(['A','B','AB']);
+    const CATS_COM_TOX = new Set(['C','D','E','AC','AD','AE']);
+
+    function enforceFlags() {
+      const v = selCategory.value;
+      if (!v) {
+        if (flagsBox) flagsBox.style.display = 'none';
+        return;
+      }
+      if (flagsBox) flagsBox.style.display = 'block';
+      if (CATS_SEM_TOX.has(v)) {
+        if (toxWrap) toxWrap.style.display = 'none';
+        if (tox) tox.checked = false;
+      } else if (CATS_COM_TOX.has(v)) {
+        if (toxWrap) toxWrap.style.display = 'block';
+      } else {
+        if (toxWrap) toxWrap.style.display = 'none';
+        if (tox) tox.checked = false;
+      }
+    }
+    if (selCategory) selCategory.addEventListener('change', enforceFlags);
+
+    // ==================== SELECT CUSTOMIZADO ====================
+    const selectModal = document.getElementById('select-modal');
+    const selectList = document.getElementById('select-list');
+    const selectTitle = document.getElementById('select-title');
+    let currentSelect = null;
+    let currentBtn = null;
+
+    function openSelectModal(btn, sel, title) {
+      currentSelect = sel;
+      currentBtn = btn;
+      selectTitle.textContent = title || 'Selecionar';
+      selectList.innerHTML = '';
+      [...sel.options].forEach(opt => {
+        if (opt.value === '') return;
+        const div = document.createElement('div');
+        div.className = 'select-opt' + (sel.value === opt.value ? ' active' : '');
+        div.textContent = opt.textContent;
+        div.onclick = () => {
+          sel.value = opt.value;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          btn.textContent = opt.textContent;
+          closeSelectModal();
+        };
+        selectList.appendChild(div);
+      });
+      selectModal.classList.add('show');
+      selectModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSelectModal() {
+      selectModal.classList.remove('show');
+      selectModal.setAttribute('aria-hidden', 'true');
+    }
+
+    selectModal.addEventListener('click', (e) => {
+      if (e.target === selectModal) closeSelectModal();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && selectModal.classList.contains('show')) {
+        closeSelectModal();
+      }
+    });
+
+    function initCustomSelects() {
+      document.querySelectorAll('select[data-enhance="modal"]').forEach(sel => {
+        const wrap = sel.closest('.select-wrap');
+        const btn = wrap.querySelector('.select-display');
+        const initial = sel.value ? sel.selectedOptions[0].textContent : sel.options[0]?.textContent || 'Selecionar';
+        btn.textContent = initial;
+        btn.addEventListener('click', () => openSelectModal(btn, sel, wrap.dataset.selectFor));
+      });
+    }
+    initCustomSelects();
+
+    // ==================== VALIDAÇÃO CPF/TELEFONE ====================
+    const inputPhone = document.querySelector('input[name="Phone"]');
+    const inputCPF = document.querySelector('input[name="CPF"]');
+
+    function digitsOnly(s) {
+      return (s || '').replace(/\D+/g, '');
+    }
+
+    function enforce11(el) {
+      const v = digitsOnly(el.value).slice(0, 11);
+      if (el.value !== v) el.value = v;
+    }
+
+    function preventNonDigits(e) {
+      const ok = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+      if (ok.includes(e.key)) return;
+      if (!/^\d$/.test(e.key)) e.preventDefault();
+    }
+
+    [inputPhone, inputCPF].forEach(el => {
+      if (el) {
+        el.addEventListener('keydown', preventNonDigits);
+        el.addEventListener('input', () => enforce11(el));
+        el.addEventListener('paste', () => setTimeout(() => enforce11(el), 0));
+      }
+    });
+
+    // ==================== SUBMIT FORM ====================
+    const form = document.getElementById('form');
+    const msg = document.getElementById('msg');
+    const btnConfirm = document.getElementById('download-confirm');
+    const btnQuest = document.getElementById('download-quest');
+
+    const questModalEl = document.getElementById('quest-modal');
+    const questLink = document.getElementById('quest-download');
+
+    function showQuestModal() {
+      questLink.href = btnQuest.href;
+      questModalEl.classList.add('show');
+      questModalEl.setAttribute('aria-hidden', 'false');
+    }
+
+    questModalEl.addEventListener('click', (e) => {
+      if (e.target === questModalEl) {
+        questModalEl.classList.remove('show');
+        questModalEl.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      msg.className = 'message';
+      
+      const timeValue = document.getElementById('timeValue');
+      if (!timeValue || !timeValue.value) {
+        msg.className = 'message error';
+        msg.textContent = 'Selecione um horário disponível.';
+        return;
+      }
+
+      const fd = new FormData(form);
+      const cpfDigits = digitsOnly(fd.get('CPF'));
+      const phoneDigits = digitsOnly(fd.get('Phone'));
+      
+      if (cpfDigits.length !== 11) {
+        msg.className = 'message error';
+        msg.textContent = 'CPF deve ter 11 dígitos numéricos.';
+        return;
+      }
+      if (phoneDigits.length !== 11) {
+        msg.className = 'message error';
+        msg.textContent = 'Telefone deve ter 11 dígitos numéricos.';
+        return;
+      }
+
+      const body = {
+        FullName: fd.get('FullName'),
+        CPF: cpfDigits,
+        Phone: phoneDigits,
+        Date: fd.get('Date'),
+        Time: timeValue.value,
+        Taxa: fd.get('Taxa'),
+        Category: fd.get('Category'),
+        Foto: fd.get('Foto') === 'on',
+        Psicotecnico: fd.get('Psicotecnico') === 'on',
+        Toxicologico: fd.get('Toxicologico') === 'on'
+      };
+
+      // Validação flags
+      if (CATS_SEM_TOX.has(body.Category)) {
+        if (!body.Foto) {
+          msg.className = 'message error';
+          msg.textContent = 'Para A, B ou AB é obrigatório confirmar Foto.';
+          return;
+        }
+      } else if (CATS_COM_TOX.has(body.Category)) {
+        if (!body.Foto || !body.Toxicologico) {
+          msg.className = 'message error';
+          msg.textContent = 'Para C, D, E, AC, AD ou AE é obrigatório confirmar Foto e Toxicológico (validade 3 meses).';
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/appointments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          msg.className = 'message success';
+          msg.textContent = data.message || 'Agendado com sucesso!';
+          if (data.id) {
+            btnConfirm.href = `${API_BASE}/appointments/${data.id}/confirmation`;
+            btnConfirm.style.display = 'inline-flex';
+          }
+          const url = `${API_BASE}/slots?date=${encodeURIComponent(body.Date)}&t=${Date.now()}`;
+          const res2 = await fetch(url, { cache: 'no-store' });
+          renderSlots((await res2.json()).slots || []);
+          showQuestModal();
+        } else {
+          msg.className = 'message error';
+          msg.textContent = data.message || 'Erro ao agendar.';
+          btnConfirm.style.display = 'none';
+        }
+      } catch (error) {
+        msg.className = 'message error';
+        msg.textContent = 'Falha de comunicação com o servidor.';
+        btnConfirm.style.display = 'none';
+      }
+    });
+
+    // ==================== MODAL DATA BLOQUEADA ====================
+    const blockedDateModalEl = document.getElementById('blocked-date-modal');
+    const closeBlockedModalBtn = document.getElementById('close-blocked-modal');
+
+    function showBlockedDateModal() {
+      const popup = document.getElementById('datePickerPopup');
+      if (popup) popup.classList.remove('show');
+      
+      const grid = document.getElementById('slotGrid');
+      const slotHint = document.getElementById('slotHint');
+      if (grid) grid.innerHTML = '';
+      if (slotHint) {
+        slotHint.textContent = 'Selecione uma data primeiro';
+        slotHint.className = 'hint';
+      }
+      
+      if (blockedDateModalEl) {
+        blockedDateModalEl.classList.add('show');
+        blockedDateModalEl.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    function closeBlockedDateModal() {
+      if (blockedDateModalEl) {
+        blockedDateModalEl.classList.remove('show');
+        blockedDateModalEl.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    if (closeBlockedModalBtn) {
+      closeBlockedModalBtn.addEventListener('click', closeBlockedDateModal);
+    }
+
+    if (blockedDateModalEl) {
+      blockedDateModalEl.addEventListener('click', (e) => {
+        if (e.target === blockedDateModalEl) closeBlockedDateModal();
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && blockedDateModalEl && blockedDateModalEl.classList.contains('show')) {
+        closeBlockedDateModal();
+      }
+    });
+
+    // ==================== REAGENDAR/CANCELAR ====================
+    const mCpf = document.getElementById('m-cpf');
+    const mPhone = document.getElementById('m-phone');
+    const mDate = document.getElementById('m-date');
+    const mTimeValue = document.getElementById('m-time-value');
+    const mGrid = document.getElementById('m-slot-grid');
+    const mHint = document.getElementById('m-slot-hint');
+    const mMsg = document.getElementById('m-msg');
+
+    function renderMgmtSlots(slots) {
+      if (!mGrid || !mHint) return;
+      mGrid.innerHTML = '';
+      mTimeValue.value = '';
+      
+      if (!slots.length) {
+        mHint.textContent = 'Sem horários para esta data';
+        return;
+      }
+      
+      mHint.textContent = 'Clique em um horário disponível';
+      slots.forEach(s => {
+        const btn = document.createElement('div');
+        const isBlocked = s.blocked === true || s.blocked === 'true' || s.blocked === 1 || 
+                         String(s.blocked || '').toLowerCase() === 'true';
+        const isTaken = s.taken === true || s.taken === 'true' || s.taken === 1 || 
+                       String(s.taken || '').toLowerCase() === 'true';
+        
+        btn.className = `slot ${isBlocked ? 'blocked' : (isTaken ? 'taken' : 'available')}`;
+        btn.textContent = s.label;
+        btn.dataset.time = s.time;
+        
+        if (!isTaken && !isBlocked) {
+          btn.addEventListener('click', () => {
+            [...mGrid.querySelectorAll('.slot.selected')].forEach(el => el.classList.remove('selected'));
+            btn.classList.add('selected');
+            mTimeValue.value = s.time;
+          });
+        } else {
+          btn.style.cursor = 'not-allowed';
+          btn.style.pointerEvents = 'none';
+        }
+        mGrid.appendChild(btn);
+      });
+    }
+
+    if (mDate) {
+      mDate.addEventListener('change', async () => {
+        if (!mHint || !mGrid) return;
+        mHint.textContent = 'Carregando...';
+        mGrid.innerHTML = '';
+        mTimeValue.value = '';
+        const d = mDate.value;
+        
+        if (!d) {
+          mHint.textContent = 'Selecione a nova data';
+          return;
+        }
+        
+        try {
+          const url = `${API_BASE}/slots?date=${encodeURIComponent(d)}&t=${Date.now()}`;
+          const res = await fetch(url, { cache: 'no-store' });
+          const data = await res.json();
+          renderMgmtSlots(data.slots || []);
+        } catch (error) {
+          mHint.textContent = 'Falha ao carregar horários';
+        }
+      });
+    }
+
+    async function postJson(url, payload) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text || res.statusText };
+      }
+      return { res, data };
+    }
+
+    // Função para formatar data e hora
+    function formatDateTime(dateStr, timeStr) {
+      if (!dateStr || !timeStr) return '';
+      try {
+        const date = new Date(dateStr + 'T' + timeStr);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year} às ${timeStr}`;
+      } catch {
+        return `${dateStr} às ${timeStr}`;
+      }
+    }
+
+    // Função para mostrar modal de confirmação de reagendamento
+    function showRescheduleConfirmModal(rescheduleData) {
+      const modal = document.getElementById('reschedule-confirm-modal');
+      const oldDateTime = document.getElementById('reschedule-old-date-time');
+      const newDateTime = document.getElementById('reschedule-new-date-time');
+      const downloadLink = document.getElementById('reschedule-download-confirm');
+      const closeBtn = document.getElementById('close-reschedule-confirm-modal');
+      
+      if (!modal || !oldDateTime || !newDateTime) return;
+      
+      // Preencher dados
+      oldDateTime.textContent = formatDateTime(rescheduleData.oldDate, rescheduleData.oldTime);
+      newDateTime.textContent = formatDateTime(rescheduleData.newDate, rescheduleData.newTime);
+      
+      // Configurar link de download
+      if (rescheduleData.id && downloadLink) {
+        downloadLink.href = `${API_BASE}/appointments/${rescheduleData.id}/confirmation`;
+        downloadLink.style.display = 'inline-flex';
+      }
+      
+      // Mostrar modal
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      
+      // Fechar modal
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          modal.classList.remove('show');
+          modal.setAttribute('aria-hidden', 'true');
+        };
+      }
+      
+      // Fechar ao clicar no backdrop
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+          modal.setAttribute('aria-hidden', 'true');
+        }
+      };
+    }
+
+    // Função para recarregar slots de uma data
+    async function reloadSlotsForDate(dateStr) {
+      if (!dateStr) return;
+      try {
+        const url = `${API_BASE}/slots?date=${encodeURIComponent(dateStr)}&t=${Date.now()}`;
+        const res = await fetch(url, { cache: 'no-store' });
+        const data = await res.json();
+        return data.slots || [];
+      } catch (error) {
+        console.error('Erro ao recarregar slots:', error);
+        return [];
+      }
+    }
+
+    if (document.getElementById('btn-reschedule')) {
+      document.getElementById('btn-reschedule').addEventListener('click', async () => {
+        if (!mMsg) return;
+        mMsg.textContent = '';
+        mMsg.className = 'message';
+        
+        const cpf = (mCpf?.value || '').trim();
+        const phone = (mPhone?.value || '').trim();
+        const d = mDate?.value;
+        const t = mTimeValue?.value;
+        
+        if (!cpf || !phone || !d || !t) {
+          mMsg.className = 'message error';
+          mMsg.textContent = 'Preencha CPF, Telefone, nova data e novo horário.';
+          return;
+        }
+        
+        // Buscar agendamento atual antes de reagendar
+        let currentAppointment = null;
+        try {
+          const currentRes = await fetch(`${API_BASE}/appointments/by-cpf?cpf=${encodeURIComponent(digitsOnly(cpf))}&phone=${encodeURIComponent(digitsOnly(phone))}`);
+          if (currentRes.ok) {
+            currentAppointment = await currentRes.json();
+            console.log('Agendamento atual encontrado:', currentAppointment);
+          }
+        } catch (error) {
+          console.warn('Não foi possível buscar agendamento atual:', error);
+        }
+        
+        // Confirmar reagendamento
+        if (currentAppointment) {
+          const confirmMsg = `Confirmar reagendamento?\n\n` +
+            `Horário atual: ${formatDateTime(currentAppointment.date, currentAppointment.time)}\n` +
+            `Novo horário: ${formatDateTime(d, t)}`;
+          if (!confirm(confirmMsg)) {
+            return;
+          }
+        }
+        
+        try {
+          const { res, data } = await postJson(`${API_BASE}/appointments/by-cpf/reschedule`, {
+            cpf: digitsOnly(cpf),
+            phone: digitsOnly(phone),
+            date: d,
+            time: t
+          });
+          
+          if (res.ok) {
+            mMsg.className = 'message success';
+            mMsg.textContent = data.message || 'Reagendado com sucesso!';
+            
+            // Mostrar modal de confirmação
+            if (data.oldDate && data.oldTime && data.newDate && data.newTime) {
+              showRescheduleConfirmModal({
+                oldDate: data.oldDate,
+                oldTime: data.oldTime,
+                newDate: data.newDate,
+                newTime: data.newTime,
+                id: data.id
+              });
+            }
+            
+            // Recarregar slots da data antiga (se diferente da nova)
+            if (data.oldDate && data.oldDate !== d) {
+              console.log('Recarregando slots da data antiga:', data.oldDate);
+              await reloadSlotsForDate(data.oldDate);
+            }
+            
+            // Recarregar slots da nova data
+            console.log('Recarregando slots da nova data:', d);
+            const newSlots = await reloadSlotsForDate(d);
+            if (mGrid && typeof renderMgmtSlots === 'function') {
+              renderMgmtSlots(newSlots);
+            }
+            
+            // Limpar campos
+            if (mDate) mDate.value = '';
+            if (mTimeValue) mTimeValue.value = '';
+            if (mGrid) mGrid.innerHTML = '';
+            if (mHint) mHint.textContent = 'Selecione a nova data';
+            
+          } else {
+            mMsg.className = 'message error';
+            mMsg.textContent = data.message || `Erro ${res.status}`;
+          }
+        } catch (error) {
+          console.error('Erro ao reagendar:', error);
+          mMsg.className = 'message error';
+          mMsg.textContent = 'Falha de comunicação com o servidor.';
+        }
+      });
+    }
+
+    if (document.getElementById('btn-cancel')) {
+      document.getElementById('btn-cancel').addEventListener('click', async () => {
+        if (!mMsg) return;
+        mMsg.textContent = '';
+        mMsg.className = 'message';
+        
+        const cpf = (mCpf?.value || '').trim();
+        const phone = (mPhone?.value || '').trim();
+        
+        if (!cpf || !phone) {
+          mMsg.className = 'message error';
+          mMsg.textContent = 'Informe CPF e Telefone.';
+          return;
+        }
+        
+        if (!confirm('Confirmar cancelamento do próximo agendamento deste CPF?')) return;
+        
+        try {
+          const { res, data } = await postJson(`${API_BASE}/appointments/by-cpf/cancel`, {
+            cpf: digitsOnly(cpf),
+            phone: digitsOnly(phone)
+          });
+          
+          if (res.ok) {
+            mMsg.className = 'message success';
+            mMsg.textContent = data.message || 'Cancelado com sucesso!';
+          } else {
+            mMsg.className = 'message error';
+            mMsg.textContent = data.message || `Erro ${res.status}`;
+          }
+        } catch (error) {
+          mMsg.className = 'message error';
+          mMsg.textContent = 'Falha de comunicação com o servidor.';
+        }
+      });
+    }
+
+    // Event listeners para campos de data
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputDateHidden = document.getElementById('datePickerHidden');
+      if (inputDateHidden) {
+        inputDateHidden.addEventListener('change', function() {
+          loadSlotsForDate(inputDateHidden.value);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
