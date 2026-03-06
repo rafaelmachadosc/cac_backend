@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+buildCommand = "dotnet restore AgendamentosApi/AgendamentosApi.csproj && dotnet publish AgendamentosApi/AgendamentosApi.csproj -c Release -o out"
+
+[deploy]
+startCommand = "dotnet out/AgendamentosApi.dll"
+healthcheckPath = "/health"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
