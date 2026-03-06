@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -17,25 +16,18 @@ try
 {
     Log.Information("Iniciando aplicação AgendamentosApi");
 
-var envCs = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
-if (!string.IsNullOrEmpty(envCs) && 
-    (envCs.Contains("host=", StringComparison.OrdinalIgnoreCase) || 
-     envCs.Contains("server=", StringComparison.OrdinalIgnoreCase) ||
-     envCs.Contains("Port=", StringComparison.OrdinalIgnoreCase)))
-{
-    Environment.SetEnvironmentVariable("ConnectionStrings__Default", null);
-        Log.Warning("Variável de ambiente ConnectionStrings__Default removida (contém PostgreSQL/MySQL)");
-}
-
 var builder = WebApplication.CreateBuilder(args);
     
     builder.Host.UseSerilog();
 
-var cs = "Data Source=appointments.db";
-builder.Configuration["ConnectionStrings:Default"] = cs;
-    Log.Information("FORÇANDO connection string SQLite: {ConnectionString}", cs);
+var cs = builder.Configuration.GetConnectionString("Default");
+if (string.IsNullOrWhiteSpace(cs))
+{
+    Log.Error("ConnectionStrings:Default não configurada. Defina a string de conexão do Supabase.");
+    throw new InvalidOperationException("ConnectionStrings:Default não configurada.");
+}
 
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(cs));
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
     
 builder.Services.AddMemoryCache(options => { options.SizeLimit = 1024; });
 builder.Services.AddCors(options =>
