@@ -35,7 +35,7 @@ var csBuilder = new NpgsqlConnectionStringBuilder(cs)
     MinPoolSize = 0,
     Timeout = 15,
     CommandTimeout = 30,
-    Keepalive = 30,
+    KeepAlive = 30,
     NoResetOnClose = true,
     Enlist = false
 };
