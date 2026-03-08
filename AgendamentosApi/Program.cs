@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using ClosedXML.Excel;
+using Npgsql;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -26,6 +27,19 @@ if (string.IsNullOrWhiteSpace(cs))
     Log.Error("ConnectionStrings:Default não configurada. Defina a string de conexão do Supabase.");
     throw new InvalidOperationException("ConnectionStrings:Default não configurada.");
 }
+
+// Ajustes de pool/timeout para reduzir falhas transitórias no Supabase.
+var csBuilder = new NpgsqlConnectionStringBuilder(cs)
+{
+    MaxPoolSize = 20,
+    MinPoolSize = 0,
+    Timeout = 15,
+    CommandTimeout = 30,
+    Keepalive = 30,
+    NoResetOnClose = true,
+    Enlist = false
+};
+cs = csBuilder.ConnectionString;
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(cs, npgsqlOptions =>
