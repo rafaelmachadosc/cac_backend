@@ -29,7 +29,13 @@ if (string.IsNullOrWhiteSpace(cs))
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(cs, npgsqlOptions =>
-        npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 5)));
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+        npgsqlOptions.CommandTimeout(30);
+    }));
     
 builder.Services.AddMemoryCache(options => { options.SizeLimit = 1024; });
 builder.Services.AddCors(options =>
