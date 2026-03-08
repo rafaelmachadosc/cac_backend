@@ -362,8 +362,11 @@ app.MapGet("/admin", (HttpContext ctx, IWebHostEnvironment env, IConfiguration c
     {
         Path.Combine(env.ContentRootPath, "..", "frontend", "admin", "index.html"),
         Path.Combine(env.ContentRootPath, "frontend", "admin", "index.html"),
+        Path.Combine(env.ContentRootPath, "..", "admin", "index.html"),
+        Path.Combine(env.ContentRootPath, "admin", "index.html"),
         Path.Combine(AppContext.BaseDirectory, "..", "frontend", "admin", "index.html"),
-        Path.Combine(AppContext.BaseDirectory, "frontend", "admin", "index.html")
+        Path.Combine(AppContext.BaseDirectory, "frontend", "admin", "index.html"),
+        Path.Combine(AppContext.BaseDirectory, "admin", "index.html")
     };
     
     string? html = null;
