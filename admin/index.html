@@ -608,9 +608,9 @@
       <table id="tbl">
         <thead>
           <tr>
-            <th>ID</th><th>FullName</th><th>CPF</th><th>Phone</th>
-            <th>Date</th><th>Time</th><th>Taxa</th><th>Category</th>
-            <th>Foto</th><th>Psicotecnico</th><th>Toxicologico</th><th>CreatedAt</th>
+            <th>ID</th><th>Nome Completo</th><th>CPF</th><th>Telefone</th>
+            <th>Data</th><th>Hora</th><th>Taxa</th><th>Categoria</th>
+            <th>Foto</th><th>Psicotécnico</th><th>Toxicológico</th><th>Agendamento usuário</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -2358,6 +2358,22 @@ function addTimeSlotToList() {
 }
 
 let CURRENT_ITEMS = [];
+function formatDatePt(value) {
+  if (!value) return '';
+  // yyyy-MM-dd
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
+}
+
+function formatDateTimePt(value) {
+  if (!value) return '';
+  // yyyy-MM-dd HH:mm:ss
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})(:\d{2})?$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]} ${m[4]}`;
+  return value;
+}
+
 async function load(date){
   console.log('Loading appointments for date:', date);
   if(!date){ 
@@ -2401,14 +2417,14 @@ async function load(date){
         <td class="c-name">${escapeHtml(it.name||'')}</td>
         <td class="c-cpf">${it.cpf||''}</td>
         <td class="c-phone">${it.phone||''}</td>
-        <td>${it.date||''}</td>
+        <td>${formatDatePt(it.date||'')}</td>
         <td>${it.time||''}</td>
         <td>${it.taxa||''}</td>
         <td>${it.category||''}</td>
         <td>${it.foto ? 'Sim' : 'Não'}</td>
         <td>${it.psi ? 'Sim' : 'Não'}</td>
         <td>${it.tox ? 'Sim' : 'Não'}</td>
-        <td>${it.createdAt||''}</td>`;
+        <td>${formatDateTimePt(it.createdAt||'')}</td>`;
       tbody.appendChild(tr);
     }
     if(items.length===0){
