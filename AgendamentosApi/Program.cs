@@ -517,12 +517,35 @@ app.MapGet("/slots", async (
             takenTimes = new List<TimeOnly>();
         }
 
-        var slots = allowed.Select(t => new {
+        var allowedTimes = allowed
+            .Select(t => TimeOnly.ParseExact(t, "HH:mm", CultureInfo.InvariantCulture))
+            .ToHashSet();
+
+        var slotsList = allowed.Select(t => new {
             time = t,
             label = ToLabel(t),
             taken = takenTimes.Contains(TimeOnly.ParseExact(t, "HH:mm", CultureInfo.InvariantCulture)),
             blocked = false
-        }).ToArray();
+        }).ToList();
+
+        // Garante que horários já agendados apareçam mesmo fora do "allowed"
+        foreach (var tt in takenTimes)
+        {
+            if (!allowedTimes.Contains(tt))
+            {
+                var tStr = tt.ToString("HH:mm", CultureInfo.InvariantCulture);
+                slotsList.Add(new {
+                    time = tStr,
+                    label = ToLabel(tStr),
+                    taken = true,
+                    blocked = false
+                });
+            }
+        }
+
+        var slots = slotsList
+            .OrderBy(s => TimeOnly.ParseExact(s.time, "HH:mm", CultureInfo.InvariantCulture))
+            .ToArray();
 
         logger.LogInformation(" Retornando {Count} slots para data {Date}", slots.Length, d);
         return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots });
@@ -960,6 +983,7 @@ app.MapGet("/admin/appointments", async (HttpContext ctx, [FromQuery] string dat
     var items = appointments.Select(a => new {
         time     = a.Time.ToString("HH:mm", CultureInfo.InvariantCulture),
         label    = ToLabel(a.Time.ToString("HH:mm", CultureInfo.InvariantCulture)),
+        date     = a.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         name     = a.FullName,
         cpf      = a.CPF,
         phone    = a.Phone,
@@ -968,6 +992,7 @@ app.MapGet("/admin/appointments", async (HttpContext ctx, [FromQuery] string dat
         foto     = a.Foto,
         psi      = a.Psicotecnico,
         tox      = a.Toxicologico,
+        createdAt = a.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
         id       = a.Id
     }).ToList();
 

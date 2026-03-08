@@ -608,8 +608,9 @@
       <table id="tbl">
         <thead>
           <tr>
-            <th>Hora</th><th>Nome</th><th>CPF</th><th>Telefone</th>
-            <th>Cat.</th><th>Taxa</th><th>Flags</th><th>ID</th><th>Ações</th>
+            <th>ID</th><th>FullName</th><th>CPF</th><th>Phone</th>
+            <th>Date</th><th>Time</th><th>Taxa</th><th>Category</th>
+            <th>Foto</th><th>Psicotecnico</th><th>Toxicologico</th><th>CreatedAt</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -2379,7 +2380,7 @@ async function load(date){
     const r = await fetch(url, { credentials:'include', headers: adminHeaders() });
     if(!r.ok){
       console.error('Error fetching appointments:', await r.text());
-      tbody.innerHTML=`<tr><td colspan="9">Acesso negado ou erro.</td></tr>`;
+      tbody.innerHTML=`<tr><td colspan="12">Acesso negado ou erro.</td></tr>`;
       return;
     }
     const json = await r.json();
@@ -2395,26 +2396,28 @@ async function load(date){
     tbody.innerHTML = '';
     for(const it of items){
       const tr=document.createElement('tr');
-      const flags=[ it.foto?'Foto':'', it.psi?'Psico':'', it.tox?'Toxico':'' ].filter(Boolean).join(', ');
       tr.innerHTML=`
-        <td>${it.label||it.time}</td>
+        <td class="c-id">${it.id} <button class="btn sm btn-edit" data-id="${it.id}" style="margin-left:6px;">Editar</button></td>
         <td class="c-name">${escapeHtml(it.name||'')}</td>
         <td class="c-cpf">${it.cpf||''}</td>
         <td class="c-phone">${it.phone||''}</td>
-        <td>${it.category||''}</td>
+        <td>${it.date||''}</td>
+        <td>${it.time||''}</td>
         <td>${it.taxa||''}</td>
-        <td>${flags}</td>
-        <td class="c-id">${it.id}</td>
-        <td><button class="btn sm btn-edit" data-id="${it.id}">Editar</button></td>`;
+        <td>${it.category||''}</td>
+        <td>${it.foto ? 'Sim' : 'Não'}</td>
+        <td>${it.psi ? 'Sim' : 'Não'}</td>
+        <td>${it.tox ? 'Sim' : 'Não'}</td>
+        <td>${it.createdAt||''}</td>`;
       tbody.appendChild(tr);
     }
     if(items.length===0){
-      tbody.innerHTML=`<tr><td colspan="9" class="muted">Sem agendamentos neste dia.</td></tr>`;
+      tbody.innerHTML=`<tr><td colspan="12" class="muted">Sem agendamentos neste dia.</td></tr>`;
     }
   }catch(e){
     console.error('Error during fetch:', e);
     if (tbody) {
-    tbody.innerHTML=`<tr><td colspan="9">Erro ao carregar.</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="12">Erro ao carregar.</td></tr>`;
     }
   }
 }
