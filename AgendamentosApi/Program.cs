@@ -27,7 +27,9 @@ if (string.IsNullOrWhiteSpace(cs))
     throw new InvalidOperationException("ConnectionStrings:Default não configurada.");
 }
 
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseNpgsql(cs, npgsqlOptions =>
+        npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 5)));
     
 builder.Services.AddMemoryCache(options => { options.SizeLimit = 1024; });
 builder.Services.AddCors(options =>
