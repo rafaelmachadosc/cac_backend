@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "dotnet restore AgendamentosApi/AgendamentosApi.csproj && dotnet publish AgendamentosApi/AgendamentosApi.csproj -c Release -o out"
 
 [variables]
-DOTNET_VERSION = "9.0"
+NIXPACKS_DOTNET_VERSION = "9"
 
 [deploy]
 startCommand = "dotnet out/AgendamentosApi.dll"
