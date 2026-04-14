@@ -1,0 +1,2544 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Painel — CAC CORAL</title>
+<style>
+  :root {
+    --primary-bg: #403d39; /* Background color */
+    --panel-bg: #252422;   /* Table color */
+    --accent: #2563eb;    /* Accent color for buttons */
+    --text-color: #f3f4f6; /* Light text */
+    --danger: #ef4444;    /* Danger color for alerts */
+    --success: #22c55e;   /* Success color */
+    --warning: #f59e0b;   /* Warning color */
+    --font-size: 12px; /* Unified font size */
+  }
+  body {
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    font-family: 'Nunito', sans-serif;
+    font-size: var(--font-size);
+  }
+  .wrap {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 20px;
+    align-items: flex-start;
+  }
+  .card {
+    flex: 1;
+    max-width: calc(50% - 20px);
+    background-color: var(--panel-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    color: var(--text-color);
+    font-size: var(--font-size);
+  }
+  h1 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    font-weight: normal; /* Normal weight */
+  }
+  h2, h3, th, td, label, button, strong {
+    font-weight: normal;
+  }
+  .btn {
+    background-color: var(--accent);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+  }
+  .btn.danger {
+    background-color: #8a817c;
+    color: #fff;
+  }
+  .btn.danger:hover {
+    background-color: #6b6560;
+  }
+  .btn.sm {
+    padding: 6px 12px;
+    font-size: var(--font-size);
+  }
+  .btn.ok,
+  .btn.btn-edit {
+    background-color: transparent;
+    border: 1px solid #70e000;
+    color: #70e000;
+  }
+  .btn.ok:hover,
+  .btn.btn-edit:hover {
+    background-color: rgba(112, 224, 0, 0.1);
+  }
+  /* Botão Incluir na seção Gerenciar Datas */
+  #btnAddTime.btn {
+    background-color: transparent;
+    border: 1px solid #70e000;
+    color: #70e000;
+  }
+  #btnAddTime.btn:hover {
+    background-color: rgba(112, 224, 0, 0.1);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: var(--panel-bg);
+  }
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+  }
+  th {
+    background-color: var(--panel-bg);
+    color: var(--text-color);
+  }
+  tbody tr:nth-child(even) {
+    background-color: #3c3c38;
+  }
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .backdrop.show {
+    display: flex;
+  }
+  .modal {
+    width: min(520px, 92vw);
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid #444;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+  .modal h3 {
+    margin: 0 0 20px;
+    font-size: var(--font-size);
+    font-weight: normal;
+  }
+  .frow {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+  }
+  .frow label {
+    width: 80px;
+    font-size: var(--font-size);
+  }
+  .frow input {
+    flex: 1;
+    background: var(--primary-bg);
+    border: 1px solid #555;
+    color: var(--text-color);
+    height: 36px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    outline: none;
+    font-size: var(--font-size);
+  }
+  .frow input:focus {
+    border-color: var(--accent);
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .error-msg {
+    color: var(--danger);
+    font-size: var(--font-size);
+    margin: 10px 0 0;
+  }
+  .muted {
+    color: #9ca3af;
+    font-size: var(--font-size);
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .row2 {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--primary-bg);
+    border: 1px solid #555;
+    padding: 8px 10px;
+    border-radius: 12px;
+    min-height: 44px;
+  }
+  .control input[type="date"],
+  .control input[type="time"] {
+    background: transparent;
+    border: 0;
+    color: var(--text-color);
+    outline: 0;
+    font: inherit;
+  }
+  .table-scroll {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #555;
+    background: var(--panel-bg);
+    margin-bottom: 20px;
+  }
+  
+  /* Estilos para o calendário personalizado */
+  .date-picker-container {
+    position: relative;
+    display: inline-block;
+  }
+  .date-picker-input {
+    background: var(--panel-bg);
+    border: 1px solid #555;
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-size);
+    min-width: 140px;
+  }
+  .date-picker-input:hover {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: #666;
+  }
+  .date-picker-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--panel-bg);
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    min-width: 280px;
+  }
+  .date-picker-popup.show {
+    display: block;
+  }
+  .date-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .date-picker-nav {
+    background: transparent;
+    border: none;
+    color: #70e000;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 20px;
+    font-weight: bold;
+    min-width: 36px;
+    transition: all 0.2s;
+  }
+  .date-picker-nav:hover {
+    background: rgba(112, 224, 0, 0.15);
+    color: #5fc500;
+  }
+  .date-picker-month-year {
+    font-size: var(--font-size);
+    color: var(--text-color);
+  }
+  .date-picker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .date-picker-weekday {
+    text-align: center;
+    font-size: var(--font-size);
+    color: #9ca3af;
+    padding: 4px;
+  }
+  .date-picker-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .date-picker-day {
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--font-size);
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+  }
+  .date-picker-day:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .date-picker-day.other-month {
+    color: #6b7280;
+  }
+  .date-picker-day.selected {
+    background: var(--accent);
+    color: #fff;
+  }
+  .date-picker-day.today {
+    border: 1px solid var(--text-color);
+  }
+  .date-picker-day.selected.today {
+    border: 1px solid #fff;
+  }
+  .date-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #555;
+  }
+  .date-picker-footer-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: var(--font-size);
+  }
+  .date-picker-footer-btn:hover {
+    background: rgba(37, 99, 235, 0.1);
+  }
+  
+  /* Estilos para o time picker personalizado */
+  .time-picker-container {
+    position: relative;
+    display: inline-block;
+  }
+  .time-picker-input {
+    background: var(--panel-bg);
+    border: 1px solid #555;
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-size);
+    min-width: 100px;
+  }
+  .time-picker-input:hover {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: #666;
+  }
+  .time-picker-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--panel-bg);
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    min-width: 200px;
+  }
+  .time-picker-popup.show {
+    display: flex;
+    gap: 8px;
+  }
+  .time-picker-column {
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    overflow-y: auto;
+    gap: 4px;
+  }
+  .time-picker-column::-webkit-scrollbar {
+    width: 6px;
+  }
+  .time-picker-column::-webkit-scrollbar-track {
+    background: var(--primary-bg);
+    border-radius: 3px;
+  }
+  .time-picker-column::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+  }
+  .time-picker-item {
+    padding: 8px 16px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: var(--font-size);
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    min-width: 50px;
+  }
+  .time-picker-item:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .time-picker-item.selected {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid #000;
+  }
+  
+  /* Estilos para lista de horários por dia da semana */
+  .time-slot-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    background: var(--primary-bg);
+    border: 1px solid #555;
+    border-radius: 6px;
+    font-size: var(--font-size);
+  }
+  .time-slot-item:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .time-slot-remove {
+    background: #8a817c;
+    border: none;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size);
+  }
+  .time-slot-remove:hover {
+    background: #6b6560;
+  }
+  .time-slot-add-container {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .time-slot-add-input {
+    flex: 1;
+    background: var(--primary-bg);
+    border: 1px solid #555;
+    color: var(--text-color);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: var(--font-size);
+  }
+  .time-slot-add-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--font-size);
+  }
+  .time-slot-add-btn:hover {
+    background: #1d4ed8;
+  }
+  
+  /* Estilos para horário editável */
+  .time-slot-value {
+    transition: all 0.2s;
+  }
+  .time-slot-value:hover {
+    background: rgba(112, 224, 0, 0.15);
+    border: 1px solid rgba(112, 224, 0, 0.5);
+  }
+  .time-slot-edit-input {
+    transition: all 0.2s;
+  }
+  .time-slot-edit-input:focus {
+    border-color: #70e000;
+    box-shadow: 0 0 0 2px rgba(112, 224, 0, 0.2);
+  }
+  
+  /* Estilização dos checkboxes na lista de horários */
+  .time-slot-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50%;
+    border: 2px solid #70e000;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    margin: 0;
+    padding: 0;
+  }
+  .time-slot-checkbox:checked {
+    background: #70e000;
+    border-color: #70e000;
+  }
+  .time-slot-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: #fff;
+    border-radius: 50%;
+  }
+  .time-slot-checkbox:hover {
+    border-color: #5fc500;
+    background: rgba(112, 224, 0, 0.1);
+  }
+  .time-slot-checkbox:checked:hover {
+    background: #5fc500;
+    border-color: #5fc500;
+  }
+  
+  /* Media queries apenas para dispositivos móveis */
+  @media only screen and (max-width: 768px) {
+    .wrap {
+      flex-direction: column;
+      gap: 20px;
+      padding: 12px;
+    }
+    .card {
+      width: 100%;
+      max-width: 100%;
+      padding: 16px;
+    }
+    .controls {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .row2 {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .control {
+      flex-wrap: wrap;
+      min-height: auto;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      min-width: 800px;
+    }
+    .date-picker-popup,
+    .time-picker-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90vw;
+      max-height: 80vh;
+    }
+    .modal {
+      width: 90vw;
+      max-width: 520px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" style="flex: 1">
+    <h1>Painel De Agendamentos - CAC CORAL</h1>
+    <div class="controls">
+      <div class="control">
+        <strong>Data:</strong>
+        <div class="date-picker-container">
+          <input id="blockDate" type="text" class="date-picker-input" readonly>
+          <div id="datePickerPopup" class="date-picker-popup">
+            <div class="date-picker-header">
+              <button class="date-picker-nav" id="prevMonth">‹</button>
+              <span class="date-picker-month-year" id="monthYear"></span>
+              <button class="date-picker-nav" id="nextMonth">›</button>
+      </div>
+            <div class="date-picker-weekdays">
+              <div class="date-picker-weekday">D</div>
+              <div class="date-picker-weekday">S</div>
+              <div class="date-picker-weekday">T</div>
+              <div class="date-picker-weekday">Q</div>
+              <div class="date-picker-weekday">Q</div>
+              <div class="date-picker-weekday">S</div>
+              <div class="date-picker-weekday">S</div>
+    </div>
+            <div class="date-picker-days" id="datePickerDays"></div>
+            <div class="date-picker-footer">
+              <button class="date-picker-footer-btn" id="clearDate">Limpar</button>
+              <button class="date-picker-footer-btn" id="todayDate">Hoje</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <button id="btnXlsx" class="btn ok">Baixar XLSX</button>
+      <button class="btn danger" id="importButton">Importar (.csv / .xlsx)</button>
+      <span id="total" class="muted">Total: 0</span>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>ID</th><th>Nome Completo</th><th>CPF</th><th>Telefone</th>
+            <th>Data</th><th>Hora</th><th>Taxa</th><th>Categoria</th>
+            <th>Foto</th><th>Psicotécnico</th><th>Toxicológico</th><th>Agendamento usuário</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card" style="flex: 1">
+    <h2>Gerenciar Datas</h2>
+    <div class="control">
+      <strong>Calendário:</strong>
+      <div class="date-picker-container">
+        <input id="selectDate" type="text" class="date-picker-input" readonly>
+        <div id="selectDatePickerPopup" class="date-picker-popup">
+          <div class="date-picker-header">
+            <button class="date-picker-nav" id="selectPrevMonth">‹</button>
+            <span class="date-picker-month-year" id="selectMonthYear"></span>
+            <button class="date-picker-nav" id="selectNextMonth">›</button>
+          </div>
+          <div class="date-picker-weekdays">
+            <div class="date-picker-weekday">D</div>
+            <div class="date-picker-weekday">S</div>
+            <div class="date-picker-weekday">T</div>
+            <div class="date-picker-weekday">Q</div>
+            <div class="date-picker-weekday">Q</div>
+            <div class="date-picker-weekday">S</div>
+            <div class="date-picker-weekday">S</div>
+          </div>
+          <div class="date-picker-days" id="selectDatePickerDays"></div>
+          <div class="date-picker-footer">
+            <button class="date-picker-footer-btn" id="selectClearDate">Limpar</button>
+            <button class="date-picker-footer-btn" id="selectTodayDate">Hoje</button>
+          </div>
+        </div>
+      </div>
+      <button id="btnBlock" class="btn danger">Bloquear</button>
+      <button id="btnUnblock" class="btn">Desbloquear</button>
+    </div>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #555;">
+      <h3 style="margin: 0 0 12px; font-size: var(--font-size); font-weight: normal;">Dias Bloqueados</h3>
+      <div id="blockedDaysList" style="max-height: 200px; overflow-y: auto; border: 1px solid #555; border-radius: 8px; padding: 8px; background: var(--primary-bg);">
+        <div style="color: #9ca3af; font-size: var(--font-size); text-align: center; padding: 20px;">Carregando...</div>
+      </div>
+    </div>
+    <div class="section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #555;">
+      <h3 style="margin: 0 0 12px; font-size: var(--font-size); font-weight: normal;">Gerenciar Horários por Dia da Semana</h3>
+      <div class="control">
+        <strong>Dia da Semana:</strong>
+        <select id="dayOfWeekSelect" style="background: var(--primary-bg); border: 1px solid #555; color: var(--text-color); padding: 8px; border-radius: 8px; font-size: var(--font-size); cursor: pointer;">
+          <option value="1">Segunda-feira</option>
+          <option value="2">Terça-feira</option>
+          <option value="3">Quarta-feira</option>
+        </select>
+      </div>
+      <div style="margin-top: 12px;">
+        <label style="font-size: var(--font-size);">Horários Disponíveis:</label>
+        <div id="timeSlotsList" style="margin-top: 8px; max-height: 300px; overflow-y: auto; border: 1px solid #555; border-radius: 8px; padding: 8px; background: var(--primary-bg);"></div>
+        <div style="margin-top: 8px; margin-bottom: 8px;">
+          <button id="btnRemoveSelected" class="btn danger" style="padding: 6px 12px;">Excluir Selecionados</button>
+        </div>
+        <div class="time-slot-add-container">
+          <input type="text" id="newTimeSlotInput" class="time-slot-add-input" placeholder="HH:mm (ex: 0830)" maxlength="5" inputmode="numeric">
+          <button id="btnAddTimeSlot" class="time-slot-add-btn">Adicionar</button>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+          <button id="btnSaveDaySchedule" class="btn">Salvar Horários</button>
+          <button id="btnResetDaySchedule" class="btn danger">Resetar para Padrão</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="editBackdrop" class="backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <h3 id="editTitle">Editar dados do cliente</h3>
+    <div class="frow"><label for="e-name">Nome</label><input id="e-name" autocomplete="name"/></div>
+    <div class="frow"><label for="e-cpf">CPF</label><input id="e-cpf" inputmode="numeric" maxlength="11" autocomplete="off"/></div>
+    <div class="frow"><label for="e-phone">Telefone</label><input id="e-phone" inputmode="numeric" maxlength="11" autocomplete="tel"/></div>
+    <div id="editMsg" class="error-msg" style="display:none"></div>
+    <div class="modal-actions">
+      <button id="btnCancelEdit" class="btn danger" type="button">Cancelar</button>
+      <button id="btnSaveEdit" class="btn" type="button">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação para alterações de horários -->
+<div id="confirmTimeChangeBackdrop" class="backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTimeChangeTitle">
+    <h3 id="confirmTimeChangeTitle">Confirmar alteração</h3>
+    <p id="confirmTimeChangeMessage" style="margin: 10px 0; font-size: var(--font-size);"></p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+      <button id="btnCancelTimeChange" class="btn" style="background: #8a817c;">Cancelar</button>
+      <button id="btnConfirmTimeChange" class="btn ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação para bloqueio de data -->
+<div id="confirmBlockBackdrop" class="backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmBlockTitle">
+    <h3 id="confirmBlockTitle">Confirmar bloqueio</h3>
+    <p id="confirmBlockMessage" style="margin: 10px 0; font-size: var(--font-size);">Tem certeza que deseja bloquear todos os horários neste dia?</p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+      <button id="btnCancelBlock" class="btn" style="background: #8a817c;">Cancelar</button>
+      <button id="btnConfirmBlock" class="btn danger">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal informativo para data bloqueada -->
+<div id="blockedDateBackdrop" class="backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="blockedDateTitle">
+    <h3 id="blockedDateTitle">Data Bloqueada</h3>
+    <p id="blockedDateMessage" style="margin: 10px 0; font-size: var(--font-size);">Esta data está bloqueada para agendamentos. Por favor, selecione outra data.</p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+      <button id="btnCloseBlockedDate" class="btn ok">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// Detectar automaticamente se está rodando localmente ou em produção
+// Se a porta for 5000 ou estiver em localhost/127.0.0.1, usar localhost
+const isLocal = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' || 
+                window.location.hostname === '0.0.0.0' ||
+                window.location.port === '5000' ||
+                window.location.hostname === '';
+
+const API = isLocal 
+  ? `http://localhost:5000`
+  : 'https://caccoral.site';  // Produção
+
+console.log('Detected environment:', isLocal ? 'LOCAL' : 'PRODUCTION');
+console.log('API URL:', API);
+const ADMIN_KEY_PARAM = new URLSearchParams(location.search).get('key');
+const CORRECT_ADMIN_KEY = 'cac-coral-drpaulo'; // Chave correta
+
+if (ADMIN_KEY_PARAM) {
+  // Se a chave fornecida na URL for diferente da correta, usar a correta
+  if (ADMIN_KEY_PARAM === CORRECT_ADMIN_KEY) {
+    localStorage.setItem('admin_key', ADMIN_KEY_PARAM);
+    document.cookie = `admin_key=${ADMIN_KEY_PARAM}; Path=/; SameSite=Lax`;
+  } else {
+    // Limpar chave incorreta e usar a correta
+    console.warn('Chave incorreta detectada na URL. Usando chave correta.');
+    localStorage.setItem('admin_key', CORRECT_ADMIN_KEY);
+    document.cookie = `admin_key=${CORRECT_ADMIN_KEY}; Path=/; SameSite=Lax`;
+    // Redirecionar para URL correta
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('key', CORRECT_ADMIN_KEY);
+    window.history.replaceState({}, '', newUrl);
+  }
+}
+
+// Verificar se a chave no localStorage está correta
+let storedKey = localStorage.getItem('admin_key');
+if (storedKey && storedKey !== CORRECT_ADMIN_KEY) {
+  console.warn('Chave incorreta encontrada no localStorage. Corrigindo...');
+  localStorage.setItem('admin_key', CORRECT_ADMIN_KEY);
+  storedKey = CORRECT_ADMIN_KEY;
+}
+
+const ADMIN_KEY = storedKey || CORRECT_ADMIN_KEY; // Sempre usar a chave correta
+
+console.log('API Endpoint:', API);
+console.log('Admin Key:', ADMIN_KEY);  // Add logging for debugging
+
+function adminHeaders() {
+  const h = { };
+  if (ADMIN_KEY) h['X-Admin-Key'] = ADMIN_KEY;
+  return h;
+}
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+
+// Definir tbody no escopo global para ser acessível em toda aplicação
+let tbody = null;
+
+// Calendário personalizado
+let currentCalendarDate = new Date();
+let selectedDate = null;
+
+const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+function formatDate(date) {
+  const z = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}`;
+}
+
+function parseDate(dateString) {
+  if (!dateString) return new Date();
+  const parts = dateString.split('-');
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function isToday(date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+function isSelected(date) {
+  if (!selectedDate) return false;
+  return date.getDate() === selectedDate.getDate() &&
+         date.getMonth() === selectedDate.getMonth() &&
+         date.getFullYear() === selectedDate.getFullYear();
+}
+
+function renderCalendar() {
+  const daysContainer = $('#datePickerDays');
+  const monthYearEl = $('#monthYear');
+  if (!daysContainer || !monthYearEl) return;
+
+  // Atualizar mês/ano
+  monthYearEl.textContent = `${months[currentCalendarDate.getMonth()]} de ${currentCalendarDate.getFullYear()}`;
+
+  // Limpar dias
+  daysContainer.innerHTML = '';
+
+  // Primeiro dia do mês
+  const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+  const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+  
+  // Dia da semana do primeiro dia (0 = domingo)
+  const startDay = firstDay.getDay();
+  
+  // Último dia do mês anterior
+  const prevMonthLastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 0);
+  
+  // Dias do mês anterior
+  for (let i = startDay - 1; i >= 0; i--) {
+    const day = prevMonthLastDay.getDate() - i;
+    const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() - 1, day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day other-month';
+    btn.textContent = day;
+    btn.onclick = () => selectDate(date);
+    daysContainer.appendChild(btn);
+  }
+  
+  // Dias do mês atual
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day';
+    btn.textContent = day;
+    
+    if (isToday(date)) {
+      btn.classList.add('today');
+    }
+    if (isSelected(date)) {
+      btn.classList.add('selected');
+    }
+    
+    btn.onclick = () => selectDate(date);
+    daysContainer.appendChild(btn);
+  }
+  
+  // Dias do próximo mês
+  const remainingDays = 42 - daysContainer.children.length; // 6 semanas * 7 dias
+  for (let day = 1; day <= remainingDays; day++) {
+    const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day other-month';
+    btn.textContent = day;
+    btn.onclick = () => selectDate(date);
+    daysContainer.appendChild(btn);
+  }
+}
+
+async function selectDate(date) {
+  const dateString = formatDate(date);
+  
+  // Verificar se a data está bloqueada
+  const isBlocked = await checkIfDateIsBlocked(dateString);
+  if (isBlocked) {
+    // Fechar calendário
+    const popup = $('#datePickerPopup');
+    if (popup) {
+      popup.classList.remove('show');
+    }
+    // Mostrar modal informativo
+    showBlockedDateModal();
+    return;
+  }
+  
+  selectedDate = date;
+  const blockDateEl = $('#blockDate');
+  if (blockDateEl) {
+    blockDateEl.value = dateString;
+  }
+  
+  // Se mudou de mês, atualizar o calendário
+  if (date.getMonth() !== currentCalendarDate.getMonth() || 
+      date.getFullYear() !== currentCalendarDate.getFullYear()) {
+    currentCalendarDate = new Date(date);
+    renderCalendar();
+  } else {
+    renderCalendar();
+  }
+  
+  // Carregar agendamentos
+  load(dateString);
+  
+  // Fechar calendário
+  const popup = $('#datePickerPopup');
+  if (popup) {
+    popup.classList.remove('show');
+  }
+}
+
+function initDatePicker() {
+  const blockDateEl = $('#blockDate');
+  const popup = $('#datePickerPopup');
+  const prevBtn = $('#prevMonth');
+  const nextBtn = $('#nextMonth');
+  const clearBtn = $('#clearDate');
+  const todayBtn = $('#todayDate');
+  
+  if (!blockDateEl || !popup) return;
+  
+  // Data inicial
+  const today = new Date();
+  selectedDate = today;
+  currentCalendarDate = new Date(today);
+  blockDateEl.value = formatDate(today);
+  
+  renderCalendar();
+  
+  // Abrir/fechar calendário
+  blockDateEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.classList.toggle('show');
+  });
+  
+  // Fechar ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.date-picker-container')) {
+      popup.classList.remove('show');
+    }
+  });
+  
+  // Navegação entre meses
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentCalendarDate.setDate(1);
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+      renderCalendar();
+    });
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentCalendarDate.setDate(1);
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+      renderCalendar();
+    });
+  }
+  
+  // Botão Limpar
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      selectedDate = null;
+      if (blockDateEl) {
+        blockDateEl.value = '';
+      }
+      renderCalendar();
+      popup.classList.remove('show');
+    });
+  }
+  
+  // Botão Hoje
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      const today = new Date();
+      selectDate(today);
+    });
+  }
+}
+
+// Variáveis para o segundo calendário (Gerenciar Datas)
+let currentSelectCalendarDate = new Date();
+let selectedSelectDate = null;
+
+function renderSelectCalendar() {
+  const daysContainer = $('#selectDatePickerDays');
+  const monthYearEl = $('#selectMonthYear');
+  if (!daysContainer || !monthYearEl) return;
+
+  monthYearEl.textContent = `${months[currentSelectCalendarDate.getMonth()]} de ${currentSelectCalendarDate.getFullYear()}`;
+  daysContainer.innerHTML = '';
+
+  const firstDay = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth(), 1);
+  const lastDay = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth() + 1, 0);
+  const startDay = firstDay.getDay();
+  const prevMonthLastDay = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth(), 0);
+
+  for (let i = startDay - 1; i >= 0; i--) {
+    const day = prevMonthLastDay.getDate() - i;
+    const date = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth() - 1, day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day other-month';
+    btn.textContent = day;
+    btn.onclick = () => selectSelectDate(date);
+    daysContainer.appendChild(btn);
+  }
+
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth(), day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day';
+    btn.textContent = day;
+
+    if (isToday(date)) {
+      btn.classList.add('today');
+    }
+    if (selectedSelectDate && date.getDate() === selectedSelectDate.getDate() &&
+        date.getMonth() === selectedSelectDate.getMonth() &&
+        date.getFullYear() === selectedSelectDate.getFullYear()) {
+      btn.classList.add('selected');
+    }
+
+    btn.onclick = () => selectSelectDate(date);
+    daysContainer.appendChild(btn);
+  }
+
+  const remainingDays = 42 - daysContainer.children.length;
+  for (let day = 1; day <= remainingDays; day++) {
+    const date = new Date(currentSelectCalendarDate.getFullYear(), currentSelectCalendarDate.getMonth() + 1, day);
+    const btn = document.createElement('button');
+    btn.className = 'date-picker-day other-month';
+    btn.textContent = day;
+    btn.onclick = () => selectSelectDate(date);
+    daysContainer.appendChild(btn);
+  }
+}
+
+async function selectSelectDate(date) {
+  const dateString = formatDate(date);
+
+  selectedSelectDate = date;
+  const selectDateEl = $('#selectDate');
+  if (selectDateEl) {
+    selectDateEl.value = dateString;
+  }
+
+  if (date.getMonth() !== currentSelectCalendarDate.getMonth() ||
+      date.getFullYear() !== currentSelectCalendarDate.getFullYear()) {
+    currentSelectCalendarDate = new Date(date);
+    renderSelectCalendar();
+  } else {
+    renderSelectCalendar();
+  }
+
+  const popup = $('#selectDatePickerPopup');
+  if (popup) {
+    popup.classList.remove('show');
+  }
+}
+
+function initSelectDatePicker() {
+  const selectDateEl = $('#selectDate');
+  const popup = $('#selectDatePickerPopup');
+  const prevBtn = $('#selectPrevMonth');
+  const nextBtn = $('#selectNextMonth');
+  const clearBtn = $('#selectClearDate');
+  const todayBtn = $('#selectTodayDate');
+
+  if (!selectDateEl || !popup) return;
+
+  renderSelectCalendar();
+
+  selectDateEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.classList.toggle('show');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.date-picker-container')) {
+      popup.classList.remove('show');
+    }
+  });
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentSelectCalendarDate.setDate(1);
+      currentSelectCalendarDate.setMonth(currentSelectCalendarDate.getMonth() - 1);
+      renderSelectCalendar();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentSelectCalendarDate.setDate(1);
+      currentSelectCalendarDate.setMonth(currentSelectCalendarDate.getMonth() + 1);
+      renderSelectCalendar();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      selectedSelectDate = null;
+      if (selectDateEl) {
+        selectDateEl.value = '';
+      }
+      renderSelectCalendar();
+      popup.classList.remove('show');
+    });
+  }
+
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      const today = new Date();
+      selectSelectDate(today);
+    });
+  }
+}
+
+// Time Picker personalizado
+let selectedHour = null;
+let selectedMinute = null;
+
+function formatTime(hour, minute) {
+  const z = n => String(n).padStart(2, '0');
+  if (hour === null || minute === null) return '--:--';
+  return `${z(hour)}:${z(minute)}`;
+}
+
+function renderTimePicker() {
+  const hoursColumn = $('#hoursColumn');
+  const minutesColumn = $('#minutesColumn');
+  if (!hoursColumn || !minutesColumn) return;
+
+  // Limpar colunas
+  hoursColumn.innerHTML = '';
+  minutesColumn.innerHTML = '';
+
+  // Renderizar horas (0-23)
+  for (let h = 0; h < 24; h++) {
+    const btn = document.createElement('button');
+    btn.className = 'time-picker-item';
+    btn.textContent = String(h).padStart(2, '0');
+    if (selectedHour === h) {
+      btn.classList.add('selected');
+    }
+    btn.onclick = () => {
+      selectedHour = h;
+      renderTimePicker();
+      updateTimeInput();
+    };
+    hoursColumn.appendChild(btn);
+  }
+
+  // Renderizar minutos (0-59)
+  for (let m = 0; m < 60; m++) {
+    const btn = document.createElement('button');
+    btn.className = 'time-picker-item';
+    btn.textContent = String(m).padStart(2, '0');
+    if (selectedMinute === m) {
+      btn.classList.add('selected');
+    }
+    btn.onclick = () => {
+      selectedMinute = m;
+      renderTimePicker();
+      updateTimeInput();
+    };
+    minutesColumn.appendChild(btn);
+  }
+}
+
+function updateTimeInput() {
+  const timeInput = $('#timeInput');
+  if (timeInput) {
+    timeInput.value = formatTime(selectedHour, selectedMinute);
+  }
+}
+
+function initTimePicker() {
+  const timeInput = $('#timeInput');
+  const popup = $('#timePickerPopup');
+  if (!timeInput || !popup) return;
+
+  // Inicializar com --:--
+  timeInput.value = '--:--';
+
+  // Renderizar time picker
+  renderTimePicker();
+
+  // Abrir/fechar time picker
+  timeInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.classList.toggle('show');
+    
+    // Scroll para item selecionado
+    const hoursCol = $('#hoursColumn');
+    const minutesCol = $('#minutesColumn');
+    if (selectedHour !== null && hoursCol) {
+      const hourItem = hoursCol.querySelector('.time-picker-item.selected');
+      if (hourItem) {
+        setTimeout(() => {
+          hoursCol.scrollTop = hourItem.offsetTop - hoursCol.offsetTop - 50;
+        }, 10);
+      }
+    }
+    if (selectedMinute !== null && minutesCol) {
+      const minuteItem = minutesCol.querySelector('.time-picker-item.selected');
+      if (minuteItem) {
+        setTimeout(() => {
+          minutesCol.scrollTop = minuteItem.offsetTop - minutesCol.offsetTop - 50;
+        }, 10);
+      }
+    }
+  });
+
+  // Fechar ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.time-picker-container')) {
+      popup.classList.remove('show');
+    }
+  });
+}
+
+// Inicializar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar calendários personalizados
+  initDatePicker();
+  initSelectDatePicker();
+  initTimePicker();
+  
+  // Inicializar tbody no escopo global
+  tbody = $('#tbl tbody');
+  if (!tbody) {
+    console.error('Tabela tbody não encontrada no DOM');
+    return;
+  }
+
+  // Carregar automaticamente a data de hoje (já será feito pelo initDatePicker)
+  const blockDateEl = $('#blockDate');
+  if (blockDateEl && blockDateEl.value) {
+    const d = blockDateEl.value;
+    console.log('Automatically loading appointments for date:', d);
+    load(d);
+  }
+  
+  // Carregar lista de dias bloqueados
+  loadBlockedDays();
+
+  // Event listener para botão Baixar XLSX
+  const btnXlsx = $('#btnXlsx');
+  if (btnXlsx) {
+    btnXlsx.addEventListener('click', () => {
+      const d = blockDateEl ? blockDateEl.value : '';
+      if(!d) return;
+      const u = `${API}/reports/daily?date=${encodeURIComponent(d)}`;
+  const sep = u.includes('?') ? '&' : '?';
+  window.open(`${u}${sep}key=${encodeURIComponent(ADMIN_KEY)}`,'_blank');
+});
+  }
+
+  // Event listener para botão Importar
+  const importButton = $('#importButton');
+  if (importButton) {
+    importButton.addEventListener('click', onImportClick);
+  }
+
+  // Event listener para botão Bloquear
+  const btnBlock = $('#btnBlock');
+  if (btnBlock) {
+    btnBlock.addEventListener('click', () => {
+      const selectDateEl = $('#selectDate');
+      const date = selectDateEl ? selectDateEl.value : '';
+      if (!date) {
+        alert('Selecione uma data primeiro.');
+        return;
+      }
+      // Mostrar modal de confirmação
+      showConfirmBlockModal(() => {
+        blockDate(date);
+      });
+    });
+  }
+
+  // Event listener para botão Desbloquear
+  const btnUnblock = $('#btnUnblock');
+  if (btnUnblock) {
+    btnUnblock.addEventListener('click', () => {
+      const selectDateEl = $('#selectDate');
+      const date = selectDateEl ? selectDateEl.value : '';
+      if (!date) {
+        alert('Selecione uma data primeiro.');
+        return;
+      }
+      if (confirm('Tem certeza que deseja desbloquear todos os horários neste dia?')) {
+        unblockDate(date);
+      }
+    });
+  }
+
+  // Gerenciamento de Horários por Dia da Semana
+  const dayOfWeekSelect = $('#dayOfWeekSelect');
+  if (dayOfWeekSelect) {
+    dayOfWeekSelect.addEventListener('change', () => {
+      const dayOfWeek = parseInt(dayOfWeekSelect.value);
+      if (dayOfWeek) {
+        loadDaySchedule(dayOfWeek);
+      }
+    });
+    // Carregar horários do dia selecionado ao iniciar
+    if (dayOfWeekSelect.value) {
+      loadDaySchedule(parseInt(dayOfWeekSelect.value));
+    }
+  }
+
+  const btnAddTimeSlot = $('#btnAddTimeSlot');
+  if (btnAddTimeSlot) {
+    btnAddTimeSlot.addEventListener('click', addTimeSlotToList);
+  }
+
+  const newTimeSlotInput = $('#newTimeSlotInput');
+  if (newTimeSlotInput) {
+    // Aplicar máscara de formatação automática
+    newTimeSlotInput.addEventListener('input', (e) => {
+      const formatted = formatTimeInput(e.target.value);
+      e.target.value = formatted;
+    });
+    
+    // Permitir apenas números e controlar teclas especiais
+    newTimeSlotInput.addEventListener('keydown', (e) => {
+      const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+      if (allowedKeys.includes(e.key)) {
+        return; // Permitir teclas de controle
+      }
+      // Permitir apenas números
+      if (!/[0-9]/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+    
+    newTimeSlotInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addTimeSlotToList();
+      }
+    });
+  }
+
+  const btnRemoveSelected = $('#btnRemoveSelected');
+  if (btnRemoveSelected) {
+    btnRemoveSelected.addEventListener('click', removeSelectedTimeSlots);
+  }
+
+  const btnSaveDaySchedule = $('#btnSaveDaySchedule');
+  if (btnSaveDaySchedule) {
+    btnSaveDaySchedule.addEventListener('click', saveDaySchedule);
+  }
+
+  const btnResetDaySchedule = $('#btnResetDaySchedule');
+  if (btnResetDaySchedule) {
+    btnResetDaySchedule.addEventListener('click', resetDaySchedule);
+  }
+
+  // Event listener para botão de fechar modal de data bloqueada
+  const btnCloseBlockedDate = $('#btnCloseBlockedDate');
+  if (btnCloseBlockedDate) {
+    btnCloseBlockedDate.addEventListener('click', closeBlockedDateModal);
+  }
+
+  // Event listener para fechar modal ao clicar no backdrop
+  const blockedDateBackdrop = $('#blockedDateBackdrop');
+  if (blockedDateBackdrop) {
+    blockedDateBackdrop.addEventListener('click', (e) => {
+      if (e.target === blockedDateBackdrop) {
+        closeBlockedDateModal();
+      }
+    });
+  }
+
+  // Event listener para fechar modal com ESC (verificar se não há outro modal aberto)
+  const escHandlerBlockedDate = (e) => {
+    if (e.key === 'Escape' && blockedDateBackdrop && blockedDateBackdrop.classList.contains('show')) {
+      // Verificar se não há outro modal aberto
+      const editBackdrop = $('#editBackdrop');
+      const confirmTimeBackdrop = $('#confirmTimeChangeBackdrop');
+      const confirmBlockBackdrop = $('#confirmBlockBackdrop');
+      
+      if (!editBackdrop?.classList.contains('show') && 
+          !confirmTimeBackdrop?.classList.contains('show') && 
+          !confirmBlockBackdrop?.classList.contains('show')) {
+        closeBlockedDateModal();
+      }
+    }
+  };
+  window.addEventListener('keydown', escHandlerBlockedDate);
+
+  // Inicializar elementos do modal de edição
+  backdrop = $('#editBackdrop');
+  iName = $('#e-name');
+  iCpf = $('#e-cpf');
+  iPhone = $('#e-phone');
+  msgEl = $('#editMsg');
+
+  // Event listener para clicar no botão Editar na tabela
+  const tbl = $('#tbl');
+  if (tbl) {
+    tbl.addEventListener('click', (e)=>{
+      const btn=e.target.closest('.btn-edit'); 
+      if(!btn) return;
+      const id=Number(btn.dataset.id); 
+      const row=btn.closest('tr');
+      const item=CURRENT_ITEMS.find(x=>x.id===id); 
+      if(!item) return;
+      EDIT_ID=id; 
+      EDIT_ROW=row;
+      if (iName && iCpf && iPhone) {
+        iName.value=item.name||''; 
+        iCpf.value=item.cpf||''; 
+        iPhone.value=item.phone||'';
+      }
+      if (msgEl) {
+        msgEl.style.display='none'; 
+        msgEl.textContent='';
+      }
+      openEdit();
+    });
+  }
+
+  // Event listener para fechar modal ao clicar no backdrop
+  if (backdrop) {
+    backdrop.addEventListener('click', e=>{ 
+      if(e.target===backdrop) closeEdit(); 
+    });
+  }
+
+  // Event listener para botão Cancelar
+  const btnCancelEdit = $('#btnCancelEdit');
+  if (btnCancelEdit) {
+    btnCancelEdit.addEventListener('click', closeEdit);
+  }
+
+  // Event listener para fechar modal com ESC
+  window.addEventListener('keydown', e=>{ 
+    if(e.key==='Escape' && backdrop && backdrop.classList.contains('show')) closeEdit(); 
+  });
+
+  // Event listener para botão Salvar
+  const btnSaveEdit = $('#btnSaveEdit');
+  if (btnSaveEdit) {
+    btnSaveEdit.addEventListener('click', async ()=>{
+      if(!EDIT_ID||!EDIT_ROW) return;
+      if (!iName || !iCpf || !iPhone) return;
+      
+      const fullName=(iName.value||'').trim();
+      const cpf=onlyDigits(iCpf.value); 
+      const phone=onlyDigits(iPhone.value);
+      if(!fullName){return showEditError('Informe o Nome.');}
+      if(cpf.length!==11){return showEditError('CPF deve ter 11 dígitos.');}
+      if(phone.length!==11){return showEditError('Telefone deve ter 11 dígitos.');}
+      try{
+        const r=await fetch(`${API}/admin/appointments/${EDIT_ID}?key=${encodeURIComponent(ADMIN_KEY)}`,{
+          method:'PATCH',
+          credentials:'include',
+          headers:{'Content-Type':'application/json',...adminHeaders()},
+          body:JSON.stringify({FullName:fullName,Cpf:cpf,Phone:phone})
+        });
+        const text=await r.text(); 
+        let data; 
+        try{data=JSON.parse(text)}catch{data={message:text}};
+        if(!r.ok){return showEditError(data.message||`Erro ${r.status}`);}
+        EDIT_ROW.querySelector('.c-name').textContent=fullName;
+        EDIT_ROW.querySelector('.c-cpf').textContent=cpf;
+        EDIT_ROW.querySelector('.c-phone').textContent=phone;
+        const idx=CURRENT_ITEMS.findIndex(x=>x.id===EDIT_ID);
+        if(idx>=0){
+          CURRENT_ITEMS[idx].name=fullName;
+          CURRENT_ITEMS[idx].cpf=cpf;
+          CURRENT_ITEMS[idx].phone=phone;
+        }
+        closeEdit();
+      }catch{ 
+        showEditError('Falha ao salvar.'); 
+      }
+    });
+  }
+});
+
+// Função para verificar se uma data está bloqueada
+async function checkIfDateIsBlocked(dateString) {
+  try {
+    const url = `${API}/admin/blocked-days?key=${encodeURIComponent(ADMIN_KEY)}&t=${Date.now()}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Admin-Key': ADMIN_KEY,
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      // Se houver erro, assumir que não está bloqueada para não bloquear o fluxo
+      return false;
+    }
+    
+    const data = await response.json();
+    const blockedDays = data.blockedDays || [];
+    
+    // Verificar se a data está na lista de bloqueados
+    return blockedDays.some(blocked => {
+      const blockedDate = new Date(blocked.date + 'T00:00:00');
+      const checkDate = new Date(dateString + 'T00:00:00');
+      return blockedDate.toDateString() === checkDate.toDateString();
+    });
+  } catch (error) {
+    console.error('Erro ao verificar data bloqueada:', error);
+    // Em caso de erro, assumir que não está bloqueada
+    return false;
+  }
+}
+
+// Funções para controlar modal de data bloqueada
+function showBlockedDateModal() {
+  const backdrop = $('#blockedDateBackdrop');
+  if (backdrop) {
+    backdrop.classList.add('show');
+    backdrop.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeBlockedDateModal() {
+  const backdrop = $('#blockedDateBackdrop');
+  if (backdrop) {
+    backdrop.classList.remove('show');
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+}
+
+async function blockDate(date) {
+  if (!date) {
+    alert('Selecione uma data primeiro.');
+    return;
+  }
+
+  try {
+    // Converter data string para DateTime (adicionar hora 00:00:00)
+    const dateTime = new Date(date + 'T00:00:00').toISOString();
+    
+    const response = await fetch(`${API}/admin/block-day?key=${encodeURIComponent(ADMIN_KEY)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...adminHeaders()
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        Date: dateTime,
+        Reason: 'Bloqueado pelo administrador'
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert(data.message || 'Data bloqueada com sucesso!');
+      updateUIForBlockedDay(date);
+      
+      // Aguardar um pouco para garantir que o banco foi atualizado
+      console.log('Agendando reload da lista de dias bloqueados em 500ms...');
+      setTimeout(async () => {
+        console.log('Executando reload da lista de dias bloqueados...');
+        await loadBlockedDays(); // Recarregar lista de dias bloqueados
+        console.log('Lista de dias bloqueados recarregada após bloquear');
+      }, 500);
+      
+      // Recarregar agendamentos na data atual
+      const blockDateEl = $('#blockDate');
+      if (blockDateEl && blockDateEl.value) {
+        load(blockDateEl.value);
+      }
+    } else {
+      alert(data.message || 'Erro ao bloquear data.');
+    }
+  } catch (error) {
+    console.error('Erro ao bloquear data:', error);
+    alert('Erro ao bloquear data. Tente novamente.');
+  }
+}
+
+// Função para carregar e exibir dias bloqueados
+async function loadBlockedDays() {
+  console.log('=== Iniciando loadBlockedDays ===');
+  const listContainer = $('#blockedDaysList');
+  if (!listContainer) {
+    console.error('Elemento blockedDaysList não encontrado');
+    return;
+  }
+  
+  // Mostrar loading
+  listContainer.innerHTML = '<div style="color: #9ca3af; font-size: var(--font-size); text-align: center; padding: 20px;">Carregando...</div>';
+  
+  try {
+    const url = `${API}/admin/blocked-days?key=${encodeURIComponent(ADMIN_KEY)}&t=${Date.now()}`;
+    console.log('Carregando dias bloqueados de:', url);
+    console.log('ADMIN_KEY:', ADMIN_KEY ? ADMIN_KEY.substring(0, 5) + '...' : 'Não definida');
+    console.log('Headers sendo enviados:', adminHeaders());
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Admin-Key': ADMIN_KEY,
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      },
+      credentials: 'include'
+    });
+    
+    console.log('Response status:', response.status, response.statusText);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      let errorText = '';
+      try {
+        errorText = await response.text();
+        console.error('Erro na resposta:', response.status, errorText);
+      } catch (e) {
+        console.error('Erro ao ler resposta:', response.status);
+      }
+      
+      // Tratar diferentes códigos de erro
+      if (response.status === 401 || response.status === 403) {
+        console.error('❌ Acesso não autorizado. Verifique a ADMIN_KEY.');
+        listContainer.innerHTML = '<div style="color: #ef4444; font-size: var(--font-size); text-align: center; padding: 20px;">Acesso não autorizado. Verifique a chave de admin.</div>';
+      } else if (response.status === 404) {
+        // 404 pode significar que não há dias bloqueados ou endpoint não existe
+        console.warn('⚠️ Endpoint retornou 404. Pode ser que o endpoint não exista ou a URL esteja incorreta.');
+        // Tentar tratar como "nenhum dia bloqueado" mas logar o erro
+        listContainer.innerHTML = '<div style="color: #9ca3af; font-size: var(--font-size); text-align: center; padding: 20px;">Nenhum dia bloqueado</div>';
+      } else {
+        console.error(`❌ Erro HTTP ${response.status}: ${errorText}`);
+        listContainer.innerHTML = `<div style="color: #ef4444; font-size: var(--font-size); text-align: center; padding: 20px;">Erro ao carregar (${response.status})</div>`;
+      }
+      return;
+    }
+    
+    let data;
+    try {
+      data = await response.json();
+      console.log('Dados recebidos completos:', data);
+      console.log('blockedDays array:', data.blockedDays);
+      console.log('Quantidade de dias bloqueados:', data.blockedDays?.length || 0);
+    } catch (parseError) {
+      console.error('Erro ao fazer parse do JSON:', parseError);
+      listContainer.innerHTML = '<div style="color: #ef4444; font-size: var(--font-size); text-align: center; padding: 20px;">Erro ao processar resposta do servidor</div>';
+      return;
+    }
+    
+    const blockedDays = data.blockedDays || [];
+    console.log('Processando', blockedDays.length, 'dias bloqueados');
+    
+    if (blockedDays.length === 0) {
+      console.log('Nenhum dia bloqueado encontrado');
+      listContainer.innerHTML = '<div style="color: #9ca3af; font-size: var(--font-size); text-align: center; padding: 20px;">Nenhum dia bloqueado</div>';
+      return;
+    }
+    
+    // Renderizar lista de dias bloqueados
+    let html = '';
+    blockedDays.forEach((blocked, index) => {
+      try {
+        console.log(`Processando dia bloqueado ${index + 1}:`, blocked);
+        const dateObj = new Date(blocked.date + 'T00:00:00');
+        const formattedDate = dateObj.toLocaleDateString('pt-BR', { 
+          weekday: 'short', 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        });
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 4px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border-left: 3px solid #ef4444;">
+            <div>
+              <div style="font-size: var(--font-size); color: var(--text-color);">${formattedDate}</div>
+              ${blocked.reason ? `<div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">${blocked.reason}</div>` : ''}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        console.error('Erro ao formatar data:', blocked, e);
+      }
+    });
+    
+    console.log('HTML gerado com', blockedDays.length, 'itens');
+    listContainer.innerHTML = html;
+    console.log('=== loadBlockedDays concluído com sucesso ===');
+  } catch (error) {
+    console.error('Erro ao carregar dias bloqueados:', error);
+    console.error('Stack trace:', error.stack);
+    listContainer.innerHTML = `<div style="color: #ef4444; font-size: var(--font-size); text-align: center; padding: 20px;">Erro ao carregar: ${error.message}</div>`;
+  }
+}
+
+async function unblockDate(date) {
+  if (!date) {
+    alert('Selecione uma data primeiro.');
+    return;
+  }
+
+  try {
+    // Converter data string para DateTime (adicionar hora 00:00:00)
+    const dateTime = new Date(date + 'T00:00:00').toISOString();
+    
+    const response = await fetch(`${API}/admin/unblock-day?key=${encodeURIComponent(ADMIN_KEY)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...adminHeaders()
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        Date: dateTime,
+        Reason: ''
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert(data.message || 'Data desbloqueada com sucesso!');
+      
+      // Aguardar um pouco para garantir que o banco foi atualizado
+      console.log('Agendando reload da lista de dias bloqueados em 500ms...');
+      setTimeout(async () => {
+        console.log('Executando reload da lista de dias bloqueados...');
+        await loadBlockedDays(); // Recarregar lista de dias bloqueados
+        console.log('Lista de dias bloqueados recarregada após desbloquear');
+      }, 500);
+      
+      // Recarregar agendamentos na data atual
+      const blockDateEl = $('#blockDate');
+      if (blockDateEl && blockDateEl.value) {
+        load(blockDateEl.value);
+      }
+    } else {
+      alert(data.message || 'Erro ao desbloquear data.');
+    }
+  } catch (error) {
+    console.error('Erro ao desbloquear data:', error);
+    alert('Erro ao desbloquear data. Tente novamente.');
+  }
+}
+
+// Event listener for confirming new time - REMOVIDO pois o elemento não existe no HTML
+// $('#btnConfirmTime').addEventListener('click', () => {
+//   const date = $('#calendar').value;
+//   const time = $('#newTime').value;
+//   if (!date || !time) {
+//     alert('Selecione data e horário para incluir.');
+//     return;
+//   }
+//   confirmNewTime(date, time);
+// });
+
+function confirmNewTime(date, time) {
+  console.log('Novo horário confirmado:', date, time);
+  // Add backend integration code here
+}
+
+// ==================== Gerenciamento de Horários por Dia da Semana ====================
+let currentDayScheduleSlots = [];
+let currentDayOfWeek = null;
+let pendingTimeChange = null; // Armazena a alteração pendente
+
+// Funções para controlar modal de confirmação
+let currentConfirmHandler = null;
+
+function showConfirmTimeChangeModal(message, onConfirm) {
+  const backdrop = $('#confirmTimeChangeBackdrop');
+  const messageEl = $('#confirmTimeChangeMessage');
+  const btnConfirm = $('#btnConfirmTimeChange');
+  const btnCancel = $('#btnCancelTimeChange');
+  
+  if (!backdrop || !messageEl || !btnConfirm || !btnCancel) return;
+  
+  // Limpar handler anterior
+  if (currentConfirmHandler) {
+    btnConfirm.removeEventListener('click', currentConfirmHandler);
+  }
+  
+  messageEl.textContent = message;
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden', 'false');
+  
+  // Criar novo handler
+  currentConfirmHandler = () => {
+    if (onConfirm) {
+      onConfirm();
+    }
+    closeConfirmTimeChangeModal();
+  };
+  
+  btnConfirm.addEventListener('click', currentConfirmHandler);
+  btnCancel.addEventListener('click', closeConfirmTimeChangeModal);
+  
+  // Fechar ao clicar no backdrop (remover listeners anteriores)
+  const backdropClickHandler = (e) => {
+    if (e.target === backdrop) {
+      closeConfirmTimeChangeModal();
+    }
+  };
+  
+  backdrop.addEventListener('click', backdropClickHandler);
+  
+  // Fechar com ESC
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && backdrop.classList.contains('show')) {
+      closeConfirmTimeChangeModal();
+      window.removeEventListener('keydown', escHandler);
+    }
+  };
+  window.addEventListener('keydown', escHandler);
+}
+
+function closeConfirmTimeChangeModal() {
+  const backdrop = $('#confirmTimeChangeBackdrop');
+  const btnConfirm = $('#btnConfirmTimeChange');
+  const btnCancel = $('#btnCancelTimeChange');
+  
+  if (backdrop) {
+    backdrop.classList.remove('show');
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+  
+  // Limpar handlers
+  if (currentConfirmHandler && btnConfirm) {
+    btnConfirm.removeEventListener('click', currentConfirmHandler);
+    currentConfirmHandler = null;
+  }
+  
+  // Restaurar estado original ao cancelar
+  // Renderizar a lista novamente para garantir que todos os campos voltem ao estado normal
+  if (currentDayOfWeek !== null) {
+    renderTimeSlotsList();
+  }
+  
+  pendingTimeChange = null;
+}
+
+// Funções para controlar modal de confirmação de bloqueio
+let currentBlockHandler = null;
+
+function showConfirmBlockModal(onConfirm) {
+  const backdrop = $('#confirmBlockBackdrop');
+  const btnConfirm = $('#btnConfirmBlock');
+  const btnCancel = $('#btnCancelBlock');
+  
+  if (!backdrop || !btnConfirm || !btnCancel) return;
+  
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden', 'false');
+  
+  // Limpar handler anterior
+  if (currentBlockHandler && btnConfirm) {
+    btnConfirm.removeEventListener('click', currentBlockHandler);
+  }
+  
+  // Criar novo handler
+  currentBlockHandler = () => {
+    if (onConfirm) {
+      onConfirm();
+    }
+    closeConfirmBlockModal();
+  };
+  
+  btnConfirm.addEventListener('click', currentBlockHandler);
+  btnCancel.addEventListener('click', closeConfirmBlockModal);
+  
+  // Fechar ao clicar no backdrop
+  const backdropClickHandler = (e) => {
+    if (e.target === backdrop) {
+      closeConfirmBlockModal();
+    }
+  };
+  
+  backdrop.addEventListener('click', backdropClickHandler);
+  
+  // Fechar com ESC
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && backdrop.classList.contains('show')) {
+      closeConfirmBlockModal();
+      window.removeEventListener('keydown', escHandler);
+    }
+  };
+  window.addEventListener('keydown', escHandler);
+}
+
+function closeConfirmBlockModal() {
+  const backdrop = $('#confirmBlockBackdrop');
+  const btnConfirm = $('#btnConfirmBlock');
+  
+  if (backdrop) {
+    backdrop.classList.remove('show');
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+  
+  // Limpar handlers
+  if (currentBlockHandler && btnConfirm) {
+    btnConfirm.removeEventListener('click', currentBlockHandler);
+    currentBlockHandler = null;
+  }
+}
+
+async function loadDaySchedule(dayOfWeek) {
+  try {
+    const response = await fetch(`${API}/admin/day-schedule/${dayOfWeek}?key=${encodeURIComponent(ADMIN_KEY)}`, {
+      credentials: 'include',
+      headers: adminHeaders()
+    });
+    
+    if (!response.ok) {
+      console.error('Erro ao carregar horários do dia');
+      // Em caso de erro, tentar carregar horários padrão baseados no dia da semana
+      currentDayScheduleSlots = getDefaultSlotsForDay(dayOfWeek);
+      currentDayOfWeek = dayOfWeek;
+      renderTimeSlotsList();
+      return;
+    }
+    
+    const data = await response.json();
+    // Sempre usar os horários retornados (padrão ou customizados)
+    currentDayScheduleSlots = data.timeSlots || [];
+    
+    // Se não há horários retornados, usar os padrão
+    if (currentDayScheduleSlots.length === 0) {
+      currentDayScheduleSlots = getDefaultSlotsForDay(dayOfWeek);
+    }
+    
+    currentDayOfWeek = dayOfWeek;
+    renderTimeSlotsList();
+  } catch (error) {
+    console.error('Erro ao carregar horários:', error);
+    // Em caso de erro, carregar horários padrão
+    currentDayScheduleSlots = getDefaultSlotsForDay(dayOfWeek);
+    currentDayOfWeek = dayOfWeek;
+    renderTimeSlotsList();
+  }
+}
+
+// Função para obter horários padrão baseados no dia da semana
+function getDefaultSlotsForDay(dayOfWeek) {
+  // Segunda-feira (1), Terça-feira (2) e Quarta-feira (3) = Tarde
+  const afternoonSlots = [
+    "13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55",
+    "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
+    "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
+    "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50"
+  ];
+  
+  // DayOfWeek: 0=Domingo, 1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado
+  if (dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) {
+    // Segunda, Terça ou Quarta = Tarde
+    return afternoonSlots;
+  }
+  
+  return [];
+}
+
+function renderTimeSlotsList() {
+  const listContainer = $('#timeSlotsList');
+  if (!listContainer) return;
+  
+  listContainer.innerHTML = '';
+  
+  if (currentDayScheduleSlots.length === 0) {
+    listContainer.innerHTML = '<div style="padding: 8px; color: #9ca3af; font-size: var(--font-size);">Nenhum horário configurado</div>';
+    return;
+  }
+  
+  // Ordenar horários
+  const sortedSlots = [...currentDayScheduleSlots].sort();
+  
+  sortedSlots.forEach((timeSlot, index) => {
+    const item = document.createElement('div');
+    item.className = 'time-slot-item';
+    item.innerHTML = `
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
+        <input type="checkbox" class="time-slot-checkbox" data-time="${timeSlot}">
+        <span class="time-slot-value" data-time="${timeSlot}" data-index="${index}" style="cursor: pointer; padding: 4px 8px; border-radius: 4px; min-width: 60px; display: inline-block; text-align: center;" title="Clique para editar">${timeSlot}</span>
+      </label>
+      <button class="time-slot-remove" data-time="${timeSlot}">Excluir</button>
+    `;
+    listContainer.appendChild(item);
+  });
+  
+  // Adicionar listeners para checkboxes (evitar propagação)
+  listContainer.querySelectorAll('.time-slot-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  });
+  
+  // Adicionar listeners para botões de remover
+  listContainer.querySelectorAll('.time-slot-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const timeSlot = btn.dataset.time;
+      showConfirmTimeChangeModal(
+        `Deseja excluir o horário ${timeSlot}?`,
+        () => {
+          currentDayScheduleSlots = currentDayScheduleSlots.filter(t => t !== timeSlot);
+          renderTimeSlotsList();
+        }
+      );
+    });
+  });
+  
+  // Adicionar listeners para edição ao clicar no horário
+  listContainer.querySelectorAll('.time-slot-value').forEach(span => {
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      editTimeSlot(span);
+    });
+  });
+}
+
+function editTimeSlot(spanElement) {
+  const oldTime = spanElement.dataset.time;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = oldTime;
+  input.className = 'time-slot-edit-input';
+  input.style.cssText = 'width: 70px; padding: 4px 8px; border: 2px solid #70e000; border-radius: 4px; background: var(--primary-bg); color: var(--text-color); font-size: var(--font-size); text-align: center; outline: none;';
+  input.maxLength = 5;
+  input.pattern = '[0-9]{2}:[0-9]{2}';
+  
+  // Aplicar máscara de formatação automática
+  input.addEventListener('input', (e) => {
+    const formatted = formatTimeInput(e.target.value);
+    e.target.value = formatted;
+  });
+  
+  // Permitir apenas números e controlar teclas especiais
+  input.addEventListener('keydown', (e) => {
+    const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (allowedKeys.includes(e.key)) {
+      return;
+    }
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  });
+  
+  // Substituir o span pelo input
+  const parent = spanElement.parentElement;
+  parent.replaceChild(input, spanElement);
+  input.focus();
+  input.select();
+  
+  // Validar e mostrar modal de confirmação
+  function validateAndConfirmChange() {
+    let newTime = input.value.trim();
+    
+    // Se não tem ":", adicionar após 2 dígitos
+    if (!newTime.includes(':')) {
+      const numbers = newTime.replace(/\D/g, '').slice(0, 4);
+      if (numbers.length >= 2) {
+        newTime = numbers.slice(0, 2) + ':' + numbers.slice(2).padEnd(2, '0');
+      }
+    }
+    
+    // Garantir formato HH:mm completo
+    if (newTime.length === 4 && !newTime.includes(':')) {
+      newTime = newTime.slice(0, 2) + ':' + newTime.slice(2);
+    }
+    
+    // Validar formato HH:mm
+    const timePattern = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timePattern.test(newTime)) {
+      alert('Horário inválido. Use formato HH:mm (ex: 08:30)');
+      renderTimeSlotsList();
+      return;
+    }
+    
+    // Verificar se o novo horário já existe (exceto o que está sendo editado)
+    if (currentDayScheduleSlots.includes(newTime) && newTime !== oldTime) {
+      alert('Este horário já está na lista.');
+      renderTimeSlotsList();
+      return;
+    }
+    
+    // Se não houve alteração, apenas restaurar
+    if (newTime === oldTime) {
+      renderTimeSlotsList();
+      return;
+    }
+    
+    // Mostrar modal de confirmação
+    showConfirmTimeChangeModal(
+      `Deseja alterar o horário de ${oldTime} para ${newTime}?`,
+      () => {
+        // Aplicar alteração apenas após confirmação
+        const index = currentDayScheduleSlots.indexOf(oldTime);
+        if (index !== -1) {
+          currentDayScheduleSlots[index] = newTime;
+          renderTimeSlotsList();
+        }
+      }
+    );
+  }
+  
+  // Ao perder o foco ou pressionar Enter, validar e mostrar modal
+  input.addEventListener('blur', validateAndConfirmChange);
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      validateAndConfirmChange();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      renderTimeSlotsList();
+    }
+  });
+}
+
+function removeSelectedTimeSlots() {
+  const checkboxes = $('#timeSlotsList').querySelectorAll('.time-slot-checkbox:checked');
+  const slotsToRemove = Array.from(checkboxes).map(cb => cb.dataset.time);
+  
+  if (slotsToRemove.length === 0) {
+    alert('Selecione pelo menos um horário para excluir.');
+    return;
+  }
+  
+  const slotsText = slotsToRemove.length === 1 
+    ? `o horário ${slotsToRemove[0]}`
+    : `${slotsToRemove.length} horários (${slotsToRemove.join(', ')})`;
+  
+  showConfirmTimeChangeModal(
+    `Deseja excluir ${slotsText}?`,
+    () => {
+      currentDayScheduleSlots = currentDayScheduleSlots.filter(t => !slotsToRemove.includes(t));
+      renderTimeSlotsList();
+    }
+  );
+}
+
+async function saveDaySchedule() {
+  if (currentDayOfWeek === null) {
+    alert('Selecione um dia da semana primeiro.');
+    return;
+  }
+  
+  if (currentDayScheduleSlots.length === 0) {
+    if (!confirm('Nenhum horário configurado. Deseja remover todos os horários para este dia?')) {
+      return;
+    }
+  }
+  
+  try {
+    const response = await fetch(`${API}/admin/day-schedule?key=${encodeURIComponent(ADMIN_KEY)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...adminHeaders()
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        DayOfWeek: currentDayOfWeek,
+        TimeSlots: currentDayScheduleSlots
+      })
+    });
+    
+    const data = await response.json();
+    if (response.ok) {
+      console.log('=== HORÁRIOS SALVOS COM SUCESSO ===');
+      console.log('Resposta completa:', data);
+      console.log('Dia da semana:', currentDayOfWeek, `(${['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][currentDayOfWeek]})`);
+      console.log('Quantidade de slots salvos:', currentDayScheduleSlots.length);
+      console.log('Slots salvos:', currentDayScheduleSlots);
+      console.log('Slots retornados pelo backend:', data.slots);
+      console.log('Quantidade confirmada pelo backend:', data.slotsCount);
+      
+      if (data.slotsCount !== currentDayScheduleSlots.length) {
+        console.warn('⚠ ATENÇÃO: Quantidade de slots enviada não confere com a quantidade confirmada pelo backend!');
+      }
+      
+      // VERIFICAR SE FOI SALVO CORRETAMENTE
+      if (data.saved && data.verified) {
+        console.log('✓✓✓ HORÁRIOS VERIFICADOS E SALVOS NO BANCO');
+        
+        // Validar imediatamente chamando endpoint de verificação
+        try {
+          const verifyResponse = await fetch(`${API}/admin/verify-schedule/${currentDayOfWeek}?key=${encodeURIComponent(ADMIN_KEY)}&t=${Date.now()}`, {
+            method: 'GET',
+            headers: adminHeaders(),
+            credentials: 'include'
+          });
+          
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            console.log('=== VERIFICAÇÃO PÓS-SALVAMENTO ===');
+            console.log('Horários customizados ativos?', verifyData.isCustom);
+            console.log('Quantidade verificada:', verifyData.slotsCount);
+            console.log('Horários verificados:', verifyData.timeSlots);
+            
+            if (verifyData.isCustom && verifyData.slotsCount === currentDayScheduleSlots.length) {
+              console.log('✓✓✓ SINCRONIZAÇÃO CONFIRMADA: Horários salvos e verificados corretamente!');
+              alert('Horários salvos e sincronizados com sucesso! As alterações já estão disponíveis na tela de agendamentos.');
+            } else {
+              console.warn('⚠ AVISO: Dados podem não estar sincronizados corretamente');
+              alert('Horários salvos, mas houve uma diferença na verificação. Verifique o console para detalhes.');
+            }
+          }
+        } catch (verifyError) {
+          console.error('Erro ao verificar horários salvos:', verifyError);
+        }
+      } else {
+        alert(data.message || 'Horários salvos com sucesso!');
+      }
+      
+      // Recarregar para garantir sincronização
+      await loadDaySchedule(currentDayOfWeek);
+      
+      console.log('=== IMPORTANTE: As alterações estão disponíveis IMEDIATAMENTE na tela index.html ===');
+      console.log('=== Basta selecionar uma data que corresponda ao dia da semana alterado ===');
+    } else {
+      console.error('=== ERRO AO SALVAR HORÁRIOS ===');
+      console.error('Resposta de erro:', data);
+      alert(data.message || 'Erro ao salvar horários.');
+    }
+  } catch (error) {
+    console.error('Erro ao salvar horários:', error);
+    alert('Erro ao salvar horários. Tente novamente.');
+  }
+}
+
+async function resetDaySchedule() {
+  if (currentDayOfWeek === null) {
+    alert('Selecione um dia da semana primeiro.');
+    return;
+  }
+  
+  if (!confirm('Tem certeza que deseja resetar os horários para o padrão? Isso removerá todas as customizações.')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${API}/admin/day-schedule/${currentDayOfWeek}?key=${encodeURIComponent(ADMIN_KEY)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: adminHeaders()
+    });
+    
+    const data = await response.json();
+    if (response.ok) {
+      alert(data.message || 'Horários resetados para padrão!');
+      await loadDaySchedule(currentDayOfWeek);
+    } else {
+      alert(data.message || 'Erro ao resetar horários.');
+    }
+  } catch (error) {
+    console.error('Erro ao resetar horários:', error);
+    alert('Erro ao resetar horários. Tente novamente.');
+  }
+}
+
+function formatTimeInput(value) {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '').slice(0, 4);
+  
+  if (numbers.length === 0) return '';
+  if (numbers.length <= 2) return numbers;
+  // Adiciona ":" após 2 dígitos
+  return numbers.slice(0, 2) + ':' + numbers.slice(2);
+}
+
+function addTimeSlotToList() {
+  const input = $('#newTimeSlotInput');
+  if (!input) return;
+  
+  let timeSlot = input.value.trim();
+  
+  // Se não tem ":", adicionar após 2 dígitos
+  if (!timeSlot.includes(':')) {
+    const numbers = timeSlot.replace(/\D/g, '').slice(0, 4);
+    if (numbers.length >= 2) {
+      timeSlot = numbers.slice(0, 2) + ':' + numbers.slice(2).padEnd(2, '0');
+    }
+  }
+  
+  // Garantir formato HH:mm completo
+  if (timeSlot.length === 4 && !timeSlot.includes(':')) {
+    timeSlot = timeSlot.slice(0, 2) + ':' + timeSlot.slice(2);
+  }
+  
+  if (!timeSlot || timeSlot.length < 5) {
+    alert('Informe um horário completo no formato HH:mm');
+    return;
+  }
+  
+  // Validar formato HH:mm
+  const timePattern = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+  if (!timePattern.test(timeSlot)) {
+    alert('Horário inválido. Use formato HH:mm (ex: 08:30)');
+    return;
+  }
+  
+  // Verificar se já existe
+  if (currentDayScheduleSlots.includes(timeSlot)) {
+    alert('Este horário já está na lista.');
+    return;
+  }
+  
+  // Mostrar modal de confirmação antes de adicionar
+  showConfirmTimeChangeModal(
+    `Deseja adicionar o horário ${timeSlot}?`,
+    () => {
+      // Converter horário para minutos para comparação
+      const [hours, minutes] = timeSlot.split(':').map(Number);
+      const timeSlotMinutes = hours * 60 + minutes;
+      
+      // Encontrar a posição correta para inserir (ordem sequencial)
+      let insertIndex = currentDayScheduleSlots.length;
+      for (let i = 0; i < currentDayScheduleSlots.length; i++) {
+        const [slotHours, slotMinutes] = currentDayScheduleSlots[i].split(':').map(Number);
+        const slotMinutesTotal = slotHours * 60 + slotMinutes;
+        
+        if (timeSlotMinutes < slotMinutesTotal) {
+          insertIndex = i;
+          break;
+        }
+      }
+      
+      // Inserir na posição correta
+      currentDayScheduleSlots.splice(insertIndex, 0, timeSlot);
+      input.value = '';
+      renderTimeSlotsList();
+    }
+  );
+}
+
+let CURRENT_ITEMS = [];
+function formatDatePt(value) {
+  if (!value) return '';
+  // yyyy-MM-dd
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
+}
+
+function formatDateTimePt(value) {
+  if (!value) return '';
+  // yyyy-MM-dd HH:mm:ss
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})(:\d{2})?$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]} ${m[4]}`;
+  return value;
+}
+
+async function load(date){
+  console.log('Loading appointments for date:', date);
+  if(!date){ 
+    console.error('Date is missing'); 
+    return; 
+  }
+
+  // Verificar se tbody está disponível
+  if (!tbody) {
+    tbody = $('#tbl tbody');
+  }
+  if (!tbody) {
+    console.error('Tabela tbody não encontrada. DOM pode não estar pronto.');
+    return;
+  }
+
+  try{
+    const url = `${API}/admin/appointments?date=${encodeURIComponent(date)}&key=${encodeURIComponent(ADMIN_KEY)}`;
+    console.log('Fetching from:', url);
+    const r = await fetch(url, { credentials:'include', headers: adminHeaders() });
+    if(!r.ok){
+      console.error('Error fetching appointments:', await r.text());
+      tbody.innerHTML=`<tr><td colspan="12">Acesso negado ou erro.</td></tr>`;
+      return;
+    }
+    const json = await r.json();
+    const items = json.items || [];
+    CURRENT_ITEMS = items;
+    console.log('Appointments loaded:', items.length);
+    
+    const totalEl = $('#total');
+    if (totalEl) {
+      totalEl.textContent='Total: '+items.length;
+    }
+  
+    tbody.innerHTML = '';
+    for(const it of items){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="c-id">${it.id} <button class="btn sm btn-edit" data-id="${it.id}" style="margin-left:6px;">Editar</button></td>
+        <td class="c-name">${escapeHtml(it.name||'')}</td>
+        <td class="c-cpf">${it.cpf||''}</td>
+        <td class="c-phone">${it.phone||''}</td>
+        <td>${formatDatePt(it.date||'')}</td>
+        <td>${it.time||''}</td>
+        <td>${it.taxa||''}</td>
+        <td>${it.category||''}</td>
+        <td>${it.foto ? 'Sim' : 'Não'}</td>
+        <td>${it.psi ? 'Sim' : 'Não'}</td>
+        <td>${it.tox ? 'Sim' : 'Não'}</td>
+        <td>${formatDateTimePt(it.createdAt||'')}</td>`;
+      tbody.appendChild(tr);
+    }
+    if(items.length===0){
+      tbody.innerHTML=`<tr><td colspan="12" class="muted">Sem agendamentos neste dia.</td></tr>`;
+    }
+  }catch(e){
+    console.error('Error during fetch:', e);
+    if (tbody) {
+    tbody.innerHTML=`<tr><td colspan="12">Erro ao carregar.</td></tr>`;
+    }
+  }
+}
+
+// Variáveis globais para o modal de edição
+let backdrop = null;
+let iName = null;
+let iCpf = null;
+let iPhone = null;
+let msgEl = null;
+let EDIT_ID = null;
+let EDIT_ROW = null;
+
+// Funções do modal
+function openEdit(){ 
+  if (backdrop && iName) {
+    backdrop.classList.add('show'); 
+    backdrop.setAttribute('aria-hidden','false'); 
+    setTimeout(()=> iName.focus(),50); 
+  }
+}
+function closeEdit(){ 
+  if (backdrop) {
+    backdrop.classList.remove('show'); 
+    backdrop.setAttribute('aria-hidden','true'); 
+  }
+  EDIT_ID=null; 
+  EDIT_ROW=null; 
+  if (msgEl) {
+    msgEl.style.display='none'; 
+    msgEl.textContent=''; 
+  }
+}
+function showEditError(t){ 
+  if (msgEl) {
+    msgEl.textContent=t||'Erro'; 
+    msgEl.style.display='block'; 
+  }
+}
+
+async function onImportClick(){
+  if(!ADMIN_KEY){ alert('Sem chave de admin. Abra o painel via /admin?key=...'); return; }
+  const input=document.createElement('input');
+  input.type='file'; input.accept='.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx';
+  input.onchange=async (ev)=>{
+    const file=ev.target.files[0]; if(!file) return;
+    const fd=new FormData(); fd.append('file',file);
+    try{
+      const r=await fetch(`${API}/admin/import?key=${encodeURIComponent(ADMIN_KEY)}`,{
+        method:'POST',body:fd,credentials:'include',headers:adminHeaders()
+      });
+      const text=await r.text(); let data; try{data=JSON.parse(text)}catch{data={message:text}};
+      if(!r.ok){ alert(data.message||'Falha ao importar arquivo.'); return; }
+      alert(data.message||'Importado.');
+      if(data.errors && data.errors.length){
+        console.warn('Erros de importação:', data.errors);
+        alert('Alguns registros foram ignorados:\n' + data.errors.slice(0,10).join('\n') + (data.errors.length>10?'...':''));
+      }
+      // Recarregar com a data atual após importação
+      const blockDateEl = $('#blockDate');
+      if (blockDateEl && blockDateEl.value) {
+        load(blockDateEl.value);
+      }
+    }catch(e){
+      console.error(e); alert('Falha ao importar arquivo.');
+    }
+  };
+  input.click();
+}
+
+// REMOVIDO: load() sem parâmetros não deve ser chamado aqui
+// O carregamento automático já acontece no DOMContentLoaded
+
+// REMOVIDO: Event listeners duplicados - já estão dentro do DOMContentLoaded
+
+function addTime(date, time) {
+  console.log('Time added:', date, time);
+  // Add backend integration code here
+}
+
+function removeTime(date, time) {
+  console.log('Time removed:', date, time);
+  $('.slot.available').forEach(slot => {
+    if (slot.dataset.time === time) {
+      slot.classList.add('taken');
+      slot.classList.remove('available');
+    }
+  });
+  // Add backend integration code here
+}
+
+function updateUIForBlockedDay(date) {
+  // Assuming tr element structure
+  const tbody = $('#tbl tbody');
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach(row => {
+    // Assume first cell contains the time
+    const timeCell = row.cells[0];
+    if (timeCell) {
+      timeCell.textContent = 'bloqueado'; // Label as blocked
+      row.style.backgroundColor = '#ef4444'; // Red background
+      row.style.color = '#fff'; // White text
+    }
+  });
+}
+</script>
+</body>
+</html>
