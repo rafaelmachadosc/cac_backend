@@ -237,7 +237,7 @@ string[] GetAllowedSlots(DateOnly d)
 /// <summary>
 /// Datas especiais (liberação pontual de quarta) ignoram horários customizados do banco para aquele dia da semana.
 /// </summary>
-static string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule)
+string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule)
 {
     if (IsSpecialOpenDate(d))
         return GetAllowedSlots(d);
