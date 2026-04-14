@@ -158,26 +158,8 @@ static bool IsSpecialOpenDate(DateOnly d) =>
     d == new DateOnly(2026, 2, 18) ||
     d == new DateOnly(2026, 4, 22);
 
-// 18/02/2026: tarde 13:30–16:45, 5 em 5 minutos
-static string[] SpecialOpenSlots_2026_02_18 = new[]{
-    "13:30","13:35","13:40","13:45","13:50","13:55",
-    "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
-    "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
-    "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45"
-};
-
-// 22/04/2026: manhã 10:00–11:50 + tarde 13:30–16:00, 5 em 5 minutos
-static string[] SpecialOpenSlots_2026_04_22 = new[]{
-    "10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55",
-    "11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50",
-    "13:30","13:35","13:40","13:45","13:50","13:55",
-    "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
-    "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
-    "16:00"
-};
-
 static string[] GetSpecialOpenDateSlots(DateOnly d) =>
-    d == new DateOnly(2026, 4, 22) ? SpecialOpenSlots_2026_04_22 : SpecialOpenSlots_2026_02_18;
+    d == new DateOnly(2026, 4, 22) ? SpecialOpenSchedule.Slots20260422 : SpecialOpenSchedule.Slots20260218;
 
 static string[]? ParseCsvLine(string line)
 {
@@ -250,6 +232,36 @@ string[] GetAllowedSlots(DateOnly d)
     
     return IsAfternoonDay(d.DayOfWeek) ? AfternoonSlots :
            (IsMorningDay(d.DayOfWeek) ? MorningSlots : Array.Empty<string>());
+}
+
+/// <summary>
+/// Datas especiais (liberação pontual de quarta) ignoram horários customizados do banco para aquele dia da semana.
+/// </summary>
+static string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule)
+{
+    if (IsSpecialOpenDate(d))
+        return GetAllowedSlots(d);
+    if (customSchedule != null &&
+        !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) &&
+        customSchedule.TimeSlots.Trim() != "[]" &&
+        customSchedule.TimeSlots.Trim() != "null")
+    {
+        var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
+        if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
+            return customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray();
+    }
+    return GetAllowedSlots(d);
+}
+
+static string? GetScheduleHint(DateOnly d)
+{
+    if (d == new DateOnly(2026, 4, 22))
+        return "22/04/2026 (quarta): 10:00 às 11:50 e 13:30 às 16:00.";
+    if (d == new DateOnly(2026, 2, 18))
+        return "18/02/2026 (quarta especial): 13:30 às 16:45.";
+    if (d.DayOfWeek == DayOfWeek.Monday || d.DayOfWeek == DayOfWeek.Tuesday)
+        return "Segunda e terça: 10:00 às 11:50 e 13:30 às 16:00.";
+    return null;
 }
 
 using (var scope = app.Services.CreateScope())
@@ -406,6 +418,7 @@ app.MapGet("/admin", (HttpContext ctx, IWebHostEnvironment env, IConfiguration c
 });
 
 app.MapGet("/slots", async (
+    HttpContext http,
     [FromQuery] string date,
     AppDbContext db,
     ILogger<Program> logger,
@@ -425,6 +438,9 @@ app.MapGet("/slots", async (
             return Results.BadRequest(new { message = "Data inválida. Use YYYY-MM-DD." });
         }
 
+        http.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+        http.Response.Headers.Pragma = "no-cache";
+
         bool isThursdayDisabled = IsThursdayDisabled(d);
         logger.LogInformation("Verificação quinta-feira: Data={Date}, DayOfWeek={DayOfWeek}, IsDisabled={IsDisabled}", 
             d, d.DayOfWeek, isThursdayDisabled);
@@ -433,7 +449,7 @@ app.MapGet("/slots", async (
         {
             logger.LogWarning("QUINTA-FEIRA DESABILITADA: {Date} (dia {DayOfWeek}) - Retornando array vazio. Data limite: 20/11/2025", 
                 d, d.DayOfWeek);
-            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>() });
+            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>(), scheduleHint = GetScheduleHint(d) });
         }
 
         string[] allowed = Array.Empty<string>();
@@ -457,35 +473,8 @@ app.MapGet("/slots", async (
                 var customSchedule = await db.DaySchedules
                     .Where(s => s.DayOfWeek == d.DayOfWeek)
                     .FirstOrDefaultAsync();
-                
-                logger.LogInformation("Verificando horários para {DayOfWeek} ({Date}): CustomSchedule={HasCustom}, TimeSlots={TimeSlots}", 
-                    d.DayOfWeek, d, customSchedule != null, customSchedule?.TimeSlots?.Substring(0, Math.Min(50, customSchedule.TimeSlots?.Length ?? 0)) ?? "null");
-                
-                if (customSchedule != null && 
-                    !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) && 
-                    customSchedule.TimeSlots.Trim() != "[]" &&
-                    customSchedule.TimeSlots.Trim() != "null")
-                {
-                    var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
-                    if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
-                    {
-                        allowed = customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
-                        logger.LogInformation("✓ CUSTOMIZADOS: {DayOfWeek} ({Date}) = {Count} slots", 
-                            d.DayOfWeek, d, allowed.Length);
-                    }
-                    else
-                    {
-                        allowed = GetAllowedSlots(d);
-                        logger.LogWarning("⚠ Custom vazio/null, usando PADRÃO: {DayOfWeek} ({Date}) = {Count} slots", 
-                            d.DayOfWeek, d, allowed.Length);
-                    }
-                }
-                else
-                {
-                    allowed = GetAllowedSlots(d);
-                    logger.LogInformation("→ PADRÃO: {DayOfWeek} ({Date}) = {Count} slots (sem customização no banco)", 
-                        d.DayOfWeek, d, allowed.Length);
-                }
+                allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule);
+                logger.LogInformation("Horários efetivos {DayOfWeek} ({Date}): {Count} slots", d.DayOfWeek, d, allowed.Length);
                 if (cache != null)
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
@@ -501,7 +490,7 @@ app.MapGet("/slots", async (
         }
 
         if (allowed == null || allowed.Length == 0)
-            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>() });
+            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>(), scheduleHint = GetScheduleHint(d) });
         bool isBlocked = await db.BlockedDays.AnyAsync(b => b.Date == d);
         
         if (isBlocked)
@@ -517,7 +506,7 @@ app.MapGet("/slots", async (
                 blocked = true
             }).ToArray();
             logger.LogInformation("Retornando {Count} slots bloqueados para data {Date}.", blockedSlots.Length, d);
-            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = blockedSlots });
+            return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = blockedSlots, scheduleHint = GetScheduleHint(d) });
         }
         List<TimeOnly> takenTimes = new();
         try
@@ -565,7 +554,7 @@ app.MapGet("/slots", async (
             .ToArray();
 
         logger.LogInformation(" Retornando {Count} slots para data {Date}", slots.Length, d);
-        return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots });
+        return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots, scheduleHint = GetScheduleHint(d) });
     }
     catch (Exception ex)
     {
@@ -599,31 +588,11 @@ app.MapPost("/appointments", async ([FromBody] AppointmentDto input, AppDbContex
     var isBlocked = await db.BlockedDays.AnyAsync(b => b.Date == d);
     if (isBlocked)
         return Results.BadRequest(new { message = "Este dia está bloqueado para agendamentos." });
-    string[] allowedToday;
     db.ChangeTracker.Clear();
     var customSchedule = await db.DaySchedules
         .Where(s => s.DayOfWeek == d.DayOfWeek)
         .FirstOrDefaultAsync();
-        
-    if (customSchedule != null && 
-        !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) &&
-        customSchedule.TimeSlots.Trim() != "[]" &&
-        customSchedule.TimeSlots.Trim() != "null")
-    {
-        var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
-        if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
-        {
-            allowedToday = customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray();
-        }
-        else
-        {
-            allowedToday = GetAllowedSlots(d).Select(x => x.Trim()).ToArray();
-        }
-    }
-    else
-    {
-        allowedToday = GetAllowedSlots(d).Select(x => x.Trim()).ToArray();
-    }
+    var allowedToday = ResolveAllowedSlotsFromSchedule(d, customSchedule).Select(x => x.Trim()).ToArray();
     
     if (!allowedToday.Contains(input.Time))
         return Results.BadRequest(new { message = "Este horário não é permitido para este dia." });
@@ -857,30 +826,10 @@ app.MapPost("/appointments/by-cpf/reschedule", async ([FromBody] RescheduleDto i
     
     logger.LogInformation("📌 Entidade carregada para atualização: ID {Id}, Estado: {State}", 
         apToUpdate.Id, db.Entry(apToUpdate).State);
-    string[] allowed;
     var customSchedule = await db.DaySchedules
         .Where(s => s.DayOfWeek == newDate.DayOfWeek)
         .FirstOrDefaultAsync();
-        
-    if (customSchedule != null && 
-        !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) &&
-        customSchedule.TimeSlots.Trim() != "[]" &&
-        customSchedule.TimeSlots.Trim() != "null")
-    {
-        var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
-        if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
-        {
-            allowed = customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray();
-        }
-        else
-        {
-            allowed = GetAllowedSlots(newDate).Select(x => x.Trim()).ToArray();
-        }
-    }
-    else
-    {
-        allowed = GetAllowedSlots(newDate).Select(x => x.Trim()).ToArray();
-    }
+    var allowed = ResolveAllowedSlotsFromSchedule(newDate, customSchedule).Select(x => x.Trim()).ToArray();
     
     if (!allowed.Contains(input.Time))
     {
@@ -1742,6 +1691,29 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+/// <summary>Horários fixos para quartas liberadas pontualmente (18/02 e 22/04/2026).</summary>
+static class SpecialOpenSchedule
+{
+    /// <summary>18/02/2026: tarde 13:30–16:45, 5 em 5 minutos.</summary>
+    public static readonly string[] Slots20260218 = new[]{
+        "13:30","13:35","13:40","13:45","13:50","13:55",
+        "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
+        "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
+        "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45"
+    };
+
+    /// <summary>22/04/2026: manhã 10:00–11:50 + tarde 13:30–16:00, 5 em 5 minutos.</summary>
+    public static readonly string[] Slots20260422 = new[]{
+        "10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55",
+        "11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50",
+        "13:30","13:35","13:40","13:45","13:50","13:55",
+        "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
+        "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
+        "16:00"
+    };
+}
+
 static class DataSanitizer
 {
     public static string MaskCpf(string? cpf)

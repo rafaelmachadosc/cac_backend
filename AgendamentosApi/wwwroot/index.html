@@ -1039,7 +1039,7 @@
                 <div class="date-picker-days" id="datePickerDays"></div>
               </div>
             </div>
-            <div class="hint">Segunda e Terça: 10:00 as 11:50 - 13:30 as 16:00</div>
+            <div class="hint" id="dateScheduleHint">Segunda e terça: 10:00 às 11:50 e 13:30 às 16:00. Em datas especiais, os horários aparecem abaixo ao escolher o dia.</div>
           </div>
         </div>
 
@@ -1192,6 +1192,7 @@
     // ==================== CONFIGURAÇÃO ====================
     const API_BASE = (location.origin && location.origin.startsWith('http')) ? '' : 'https://caccoral.site';
     const MAPS_URL = 'https://maps.app.goo.gl/h3QPY2kgzPVSxmJv8?g_st=awb';
+    const DEFAULT_DATE_SCHEDULE_HINT = 'Segunda e terça: 10:00 às 11:50 e 13:30 às 16:00. Em datas especiais, os horários aparecem abaixo ao escolher o dia.';
     
     document.getElementById('btn-address').href = MAPS_URL;
     document.getElementById('download-quest').href = API_BASE + '/questionario/download';
@@ -1321,6 +1322,12 @@
         })
         .then(data => {
           console.log('✅ JSON recebido:', data);
+          const hintEl = document.getElementById('dateScheduleHint');
+          if (hintEl) {
+            hintEl.textContent = (data.scheduleHint && String(data.scheduleHint).trim())
+              ? data.scheduleHint
+              : DEFAULT_DATE_SCHEDULE_HINT;
+          }
           const slots = data.slots || [];
           
           console.log('📅 Slots recebidos para data:', dateString);
@@ -1348,6 +1355,8 @@
             if (timeValue) timeValue.value = '';
             grid.innerHTML = '';
             slotHint.textContent = 'Selecione uma data primeiro';
+            const hintElBlocked = document.getElementById('dateScheduleHint');
+            if (hintElBlocked) hintElBlocked.textContent = DEFAULT_DATE_SCHEDULE_HINT;
             showBlockedDateModal();
             const datePicker = document.getElementById('datePicker');
             const datePickerHidden = document.getElementById('datePickerHidden');
