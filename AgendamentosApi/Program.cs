@@ -196,8 +196,15 @@ string[] AfternoonSlots = new[]{
     "13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55",
     "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
     "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
-    "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50"
+    "16:00"
 };
+
+static string[] FilterTuesdaySlots(string[] slots) =>
+    slots
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Where(s => TimeOnly.TryParseExact(s, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) && t <= new TimeOnly(16, 0))
+        .ToArray();
 
 string[] GetAllowedSlots(DateOnly d) =>
     d.DayOfWeek == DayOfWeek.Tuesday ? AfternoonSlots : Array.Empty<string>();
@@ -213,9 +220,9 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
     {
         var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
         if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
-            return customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray();
+            return FilterTuesdaySlots(customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray());
     }
-    return GetAllowedSlots(d);
+    return FilterTuesdaySlots(GetAllowedSlots(d));
 }
 
 static string? GetScheduleHint(DateOnly d) =>
@@ -350,6 +357,48 @@ using (var scope = app.Services.CreateScope())
                 await insertCmd.ExecuteNonQueryAsync();
             }
             logger.LogInformation("Migração {MigrationId}: removidos {Count} dias bloqueados", clearBlockedDaysMigration, removed);
+        }
+
+        const string trimTuesdaySlotsMigration = "trim_tuesday_slots_20260610";
+        long trimMigrationCount = 0;
+        await using (var trimCheck = connection.CreateCommand())
+        {
+            trimCheck.CommandText = """SELECT COUNT(*) FROM "AppMigrations" WHERE "Id" = @id""";
+            var trimParam = trimCheck.CreateParameter();
+            trimParam.ParameterName = "@id";
+            trimParam.Value = trimTuesdaySlotsMigration;
+            trimCheck.Parameters.Add(trimParam);
+            trimMigrationCount = Convert.ToInt64(await trimCheck.ExecuteScalarAsync());
+        }
+
+        if (trimMigrationCount == 0)
+        {
+            var tuesdaySchedule = await db.DaySchedules.FirstOrDefaultAsync(s => s.DayOfWeek == DayOfWeek.Tuesday);
+            if (tuesdaySchedule != null && !string.IsNullOrWhiteSpace(tuesdaySchedule.TimeSlots))
+            {
+                var storedSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(tuesdaySchedule.TimeSlots);
+                if (storedSlots != null)
+                {
+                    var trimmedSlots = FilterTuesdaySlots(storedSlots);
+                    if (trimmedSlots.Length != storedSlots.Length)
+                    {
+                        tuesdaySchedule.TimeSlots = System.Text.Json.JsonSerializer.Serialize(trimmedSlots);
+                        tuesdaySchedule.UpdatedAt = DateTime.UtcNow;
+                        await db.SaveChangesAsync();
+                        logger.LogInformation(
+                            "Migração {MigrationId}: horários de terça reduzidos de {Before} para {After}",
+                            trimTuesdaySlotsMigration, storedSlots.Length, trimmedSlots.Length);
+                    }
+                }
+            }
+
+            await using var insertTrimCmd = connection.CreateCommand();
+            insertTrimCmd.CommandText = """INSERT INTO "AppMigrations" ("Id", "AppliedAt") VALUES (@id, NOW())""";
+            var insertTrimParam = insertTrimCmd.CreateParameter();
+            insertTrimParam.ParameterName = "@id";
+            insertTrimParam.Value = trimTuesdaySlotsMigration;
+            insertTrimCmd.Parameters.Add(insertTrimParam);
+            await insertTrimCmd.ExecuteNonQueryAsync();
         }
     }
     catch (Exception ex)
