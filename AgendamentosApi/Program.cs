@@ -150,16 +150,8 @@ app.Use(async (context, next) =>
 static string NormalizeCpf(string? cpf) => cpf is null ? "" : Regex.Replace(cpf, "[^0-9]", "");
 static string NormalizePhone(string? p) => p is null ? "" : Regex.Replace(p, "[^0-9]", "");
 static string ToLabel(string hhmm) { var p = hhmm.Split(':'); return $"{int.Parse(p[0])}H{(p[1]=="00"?"":p[1])}"; }
-// Apenas segundas e terças disponíveis para agendamento; quarta bloqueada
-static bool IsAfternoonDay(DayOfWeek d) => d == DayOfWeek.Monday || d == DayOfWeek.Tuesday;
-
-// Liberações pontuais de quartas-feiras normalmente bloqueadas (grades específicas por data)
-static bool IsSpecialOpenDate(DateOnly d) =>
-    d == new DateOnly(2026, 2, 18) ||
-    d == new DateOnly(2026, 4, 22);
-
-static string[] GetSpecialOpenDateSlots(DateOnly d) =>
-    d == new DateOnly(2026, 4, 22) ? SpecialOpenSchedule.Slots20260422 : SpecialOpenSchedule.Slots20260218;
+// Apenas terças disponíveis para agendamento
+static bool IsNonServiceDay(DateOnly d) => d.DayOfWeek != DayOfWeek.Tuesday;
 
 static string[]? ParseCsvLine(string line)
 {
@@ -200,20 +192,6 @@ static string[]? ParseCsvLine(string line)
     
     return result.ToArray();
 }
-static bool IsMorningDay(DayOfWeek d) => d == DayOfWeek.Thursday;
-
-static bool IsThursdayDisabled(DateOnly date)
-{
-    var cutoffDate = new DateOnly(2025, 11, 20);
-    return date.DayOfWeek == DayOfWeek.Thursday && date >= cutoffDate;
-}
-string[] MorningSlots = new[]{
-    "08:00","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55",
-    "09:00","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55",
-    "10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55",
-    "11:00","11:05","11:10","11:15","11:25","11:30","11:35","11:40","11:45","11:50"
-};
-
 string[] AfternoonSlots = new[]{
     "13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55",
     "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
@@ -221,26 +199,13 @@ string[] AfternoonSlots = new[]{
     "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50"
 };
 
-string[] GetAllowedSlots(DateOnly d)
-{
-    // Exceções: quartas liberadas pontualmente (ex.: 18/02/2026, 22/04/2026) com horários especiais
-    if (IsSpecialOpenDate(d))
-        return GetSpecialOpenDateSlots(d);
+string[] GetAllowedSlots(DateOnly d) =>
+    d.DayOfWeek == DayOfWeek.Tuesday ? AfternoonSlots : Array.Empty<string>();
 
-    if (IsThursdayDisabled(d))
-        return Array.Empty<string>();
-    
-    return IsAfternoonDay(d.DayOfWeek) ? AfternoonSlots :
-           (IsMorningDay(d.DayOfWeek) ? MorningSlots : Array.Empty<string>());
-}
-
-/// <summary>
-/// Datas especiais (liberação pontual de quarta) ignoram horários customizados do banco para aquele dia da semana.
-/// </summary>
 string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule)
 {
-    if (IsSpecialOpenDate(d))
-        return GetAllowedSlots(d);
+    if (IsNonServiceDay(d))
+        return Array.Empty<string>();
     if (customSchedule != null &&
         !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) &&
         customSchedule.TimeSlots.Trim() != "[]" &&
@@ -253,16 +218,10 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
     return GetAllowedSlots(d);
 }
 
-static string? GetScheduleHint(DateOnly d)
-{
-    if (d == new DateOnly(2026, 4, 22))
-        return "22/04/2026 (quarta): 10:00 às 11:50 e 13:30 às 16:00.";
-    if (d == new DateOnly(2026, 2, 18))
-        return "18/02/2026 (quarta especial): 13:30 às 16:45.";
-    if (d.DayOfWeek == DayOfWeek.Monday || d.DayOfWeek == DayOfWeek.Tuesday)
-        return "Terça: 10:00 às 11:55 e 13:30 às 16:00.";
-    return null;
-}
+static string? GetScheduleHint(DateOnly d) =>
+    d.DayOfWeek == DayOfWeek.Tuesday
+        ? "Terça: 10:00 às 11:55 e 13:30 às 16:00."
+        : null;
 
 using (var scope = app.Services.CreateScope())
 {
@@ -441,51 +400,33 @@ app.MapGet("/slots", async (
         http.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
         http.Response.Headers.Pragma = "no-cache";
 
-        bool isThursdayDisabled = IsThursdayDisabled(d);
-        logger.LogInformation("Verificação quinta-feira: Data={Date}, DayOfWeek={DayOfWeek}, IsDisabled={IsDisabled}", 
-            d, d.DayOfWeek, isThursdayDisabled);
-        
-        if (isThursdayDisabled)
-        {
-            logger.LogWarning("QUINTA-FEIRA DESABILITADA: {Date} (dia {DayOfWeek}) - Retornando array vazio. Data limite: 20/11/2025", 
-                d, d.DayOfWeek);
+        if (IsNonServiceDay(d))
             return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>(), scheduleHint = GetScheduleHint(d) });
-        }
 
         string[] allowed = Array.Empty<string>();
-        
-        // Para a data especial, não usar cache por dia da semana para não afetar outras quartas
-        if (IsSpecialOpenDate(d))
+        string cacheKey = $"slots_allowed_{d.DayOfWeek}";
+        if (cache != null && cache.TryGetValue<string[]>(cacheKey, out var cachedAllowed) && cachedAllowed != null)
         {
-            allowed = GetAllowedSlots(d);
-            logger.LogInformation("Usando horários ESPECIAIS para data {Date}: {Count} slots", d, allowed.Length);
+            allowed = cachedAllowed;
+            logger.LogInformation("Cache HIT para horários do dia {DayOfWeek}", d.DayOfWeek);
         }
         else
         {
-            string cacheKey = $"slots_allowed_{d.DayOfWeek}";
-            if (cache != null && cache.TryGetValue<string[]>(cacheKey, out var cachedAllowed) && cachedAllowed != null)
+            var customSchedule = await db.DaySchedules
+                .Where(s => s.DayOfWeek == d.DayOfWeek)
+                .FirstOrDefaultAsync();
+            allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule);
+            logger.LogInformation("Horários efetivos {DayOfWeek} ({Date}): {Count} slots", d.DayOfWeek, d, allowed.Length);
+            if (cache != null)
             {
-                allowed = cachedAllowed;
-                logger.LogInformation("Cache HIT para horários do dia {DayOfWeek}", d.DayOfWeek);
-            }
-            else
-            {
-                var customSchedule = await db.DaySchedules
-                    .Where(s => s.DayOfWeek == d.DayOfWeek)
-                    .FirstOrDefaultAsync();
-                allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule);
-                logger.LogInformation("Horários efetivos {DayOfWeek} ({Date}): {Count} slots", d.DayOfWeek, d, allowed.Length);
-                if (cache != null)
+                var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    var cacheOptions = new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
-                        SlidingExpiration = TimeSpan.FromMinutes(1),
-                        Size = 1
-                    };
-                    cache.Set(cacheKey, allowed, cacheOptions);
-                    logger.LogInformation("Cache SET para horários do dia {DayOfWeek}", d.DayOfWeek);
-                }
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
+                    SlidingExpiration = TimeSpan.FromMinutes(1),
+                    Size = 1
+                };
+                cache.Set(cacheKey, allowed, cacheOptions);
+                logger.LogInformation("Cache SET para horários do dia {DayOfWeek}", d.DayOfWeek);
             }
         }
 
@@ -575,8 +516,7 @@ app.MapPost("/appointments", async ([FromBody] AppointmentDto input, AppDbContex
 
     if (!ValidationHelpers.IsValidDate(input.Date, out var d))
         return Results.BadRequest(new { message = "Data inválida. Use YYYY-MM-DD." });
-    // Bloquear quintas (regra global) e quartas, exceto a data especial liberada
-    if ((IsThursdayDisabled(d) || d.DayOfWeek == DayOfWeek.Wednesday) && !IsSpecialOpenDate(d))
+    if (IsNonServiceDay(d))
         return Results.BadRequest(new { message = "Não atendemos no dia selecionado." });
 
     if (!ValidationHelpers.IsValidTime(input.Time, out var t))
@@ -774,8 +714,7 @@ app.MapPost("/appointments/by-cpf/reschedule", async ([FromBody] RescheduleDto i
 
     if (!ValidationHelpers.IsValidDate(input.Date, out var newDate))
         return Results.BadRequest(new { message = "Data inválida. Use YYYY-MM-DD." });
-    // Bloquear quintas (regra global) e quartas, exceto a data especial liberada
-    if ((IsThursdayDisabled(newDate) || newDate.DayOfWeek == DayOfWeek.Wednesday) && !IsSpecialOpenDate(newDate))
+    if (IsNonServiceDay(newDate))
         return Results.BadRequest(new { message = "Não atendemos no dia selecionado." });
     
     if (!ValidationHelpers.IsValidTime(input.Time, out var newTime))
@@ -1690,28 +1629,6 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-/// <summary>Horários fixos para quartas liberadas pontualmente (18/02 e 22/04/2026).</summary>
-static class SpecialOpenSchedule
-{
-    /// <summary>18/02/2026: tarde 13:30–16:45, 5 em 5 minutos.</summary>
-    public static readonly string[] Slots20260218 = new[]{
-        "13:30","13:35","13:40","13:45","13:50","13:55",
-        "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
-        "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
-        "16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45"
-    };
-
-    /// <summary>22/04/2026: manhã 10:00–11:50 + tarde 13:30–16:00, 5 em 5 minutos.</summary>
-    public static readonly string[] Slots20260422 = new[]{
-        "10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55",
-        "11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50",
-        "13:30","13:35","13:40","13:45","13:50","13:55",
-        "14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55",
-        "15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55",
-        "16:00"
-    };
 }
 
 static class DataSanitizer
