@@ -260,7 +260,7 @@ static string? GetScheduleHint(DateOnly d)
     if (d == new DateOnly(2026, 2, 18))
         return "18/02/2026 (quarta especial): 13:30 às 16:45.";
     if (d.DayOfWeek == DayOfWeek.Monday || d.DayOfWeek == DayOfWeek.Tuesday)
-        return "Segunda e terça: 10:00 às 11:50 e 13:30 às 16:00.";
+        return "Terça: 10:00 às 11:55 e 13:30 às 16:00.";
     return null;
 }
 
