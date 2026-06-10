@@ -321,6 +321,36 @@ using (var scope = app.Services.CreateScope())
         
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("Índices de banco de dados criados/verificados com sucesso");
+
+        const string clearBlockedDaysMigration = "clear_all_blocked_days_20260610";
+        await db.Database.ExecuteSqlRawAsync(
+            """CREATE TABLE IF NOT EXISTS "AppMigrations" ("Id" VARCHAR(100) PRIMARY KEY, "AppliedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW())""");
+
+        long migrationCount = 0;
+        await using (var migrationCheck = connection.CreateCommand())
+        {
+            migrationCheck.CommandText = """SELECT COUNT(*) FROM "AppMigrations" WHERE "Id" = @id""";
+            var migrationParam = migrationCheck.CreateParameter();
+            migrationParam.ParameterName = "@id";
+            migrationParam.Value = clearBlockedDaysMigration;
+            migrationCheck.Parameters.Add(migrationParam);
+            migrationCount = Convert.ToInt64(await migrationCheck.ExecuteScalarAsync());
+        }
+
+        if (migrationCount == 0)
+        {
+            var removed = await db.BlockedDays.ExecuteDeleteAsync();
+            await using (var insertCmd = connection.CreateCommand())
+            {
+                insertCmd.CommandText = """INSERT INTO "AppMigrations" ("Id", "AppliedAt") VALUES (@id, NOW())""";
+                var insertParam = insertCmd.CreateParameter();
+                insertParam.ParameterName = "@id";
+                insertParam.Value = clearBlockedDaysMigration;
+                insertCmd.Parameters.Add(insertParam);
+                await insertCmd.ExecuteNonQueryAsync();
+            }
+            logger.LogInformation("Migração {MigrationId}: removidos {Count} dias bloqueados", clearBlockedDaysMigration, removed);
+        }
     }
     catch (Exception ex)
     {
@@ -1094,6 +1124,24 @@ app.MapPost("/admin/unblock-day", async (HttpContext ctx, [FromBody] BlockDayDto
 
     return Results.Ok(new { message = "Data desbloqueada com sucesso." });
 });
+
+app.MapDelete("/admin/blocked-days", async (HttpContext ctx, AppDbContext db, IConfiguration cfg, ILogger<Program> logger) =>
+{
+    if (!IsAdmin(ctx.Request, cfg)) return Results.NotFound();
+
+    try
+    {
+        var removed = await db.BlockedDays.ExecuteDeleteAsync();
+        logger.LogInformation("Admin removeu {Count} dias bloqueados", removed);
+        return Results.Ok(new { message = $"Removidos {removed} dia(s) bloqueado(s).", removed });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro ao remover todos os dias bloqueados");
+        return Results.Problem(ex.Message);
+    }
+});
+
 app.MapGet("/admin/blocked-days", async (HttpContext ctx, AppDbContext db, IConfiguration cfg, ILogger<Program> logger) =>
 {
     logger.LogInformation("Requisição recebida em /admin/blocked-days. Query key: {QueryKey}, Header key: {HeaderKey}", 
