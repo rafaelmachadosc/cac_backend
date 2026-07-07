@@ -206,13 +206,48 @@ static string[] FilterTuesdaySlots(string[] slots) =>
         .Where(s => TimeOnly.TryParseExact(s, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) && t <= new TimeOnly(16, 0))
         .ToArray();
 
+static string[] SortSlots(string[] slots) =>
+    slots
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Distinct()
+        .OrderBy(s => TimeOnly.TryParseExact(s, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) ? t : TimeOnly.MaxValue)
+        .ToArray();
+
+// Horários específicos de uma data (ex.: liberações pontuais) guardados no banco.
+static async Task<string[]> GetSpecialDateSlotsAsync(AppDbContext db, DateOnly d)
+{
+    try
+    {
+        var entry = await db.SpecialDateSlots.AsNoTracking().FirstOrDefaultAsync(s => s.Date == d);
+        if (entry == null || string.IsNullOrWhiteSpace(entry.TimeSlots))
+            return Array.Empty<string>();
+        var slots = System.Text.Json.JsonSerializer.Deserialize<string[]>(entry.TimeSlots);
+        return (slots ?? Array.Empty<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .ToArray();
+    }
+    catch
+    {
+        return Array.Empty<string>();
+    }
+}
+
 string[] GetAllowedSlots(DateOnly d) =>
     d.DayOfWeek == DayOfWeek.Tuesday ? AfternoonSlots : Array.Empty<string>();
 
-string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule)
+string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule, string[]? specialDateSlots = null)
 {
+    var extra = (specialDateSlots ?? Array.Empty<string>())
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .ToArray();
+
     if (IsNonServiceDay(d))
-        return Array.Empty<string>();
+        return SortSlots(extra);
+
+    string[] baseSlots;
     if (customSchedule != null &&
         !string.IsNullOrWhiteSpace(customSchedule.TimeSlots) &&
         customSchedule.TimeSlots.Trim() != "[]" &&
@@ -220,9 +255,16 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
     {
         var customSlots = System.Text.Json.JsonSerializer.Deserialize<string[]>(customSchedule.TimeSlots);
         if (customSlots != null && customSlots.Length > 0 && customSlots.Any(s => !string.IsNullOrWhiteSpace(s)))
-            return FilterTuesdaySlots(customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray());
+            baseSlots = FilterTuesdaySlots(customSlots.Where(s => !string.IsNullOrWhiteSpace(s)).Select(x => x.Trim()).ToArray());
+        else
+            baseSlots = FilterTuesdaySlots(GetAllowedSlots(d));
     }
-    return FilterTuesdaySlots(GetAllowedSlots(d));
+    else
+    {
+        baseSlots = FilterTuesdaySlots(GetAllowedSlots(d));
+    }
+
+    return extra.Length == 0 ? baseSlots : SortSlots(baseSlots.Concat(extra).ToArray());
 }
 
 static string? GetScheduleHint(DateOnly d) =>
@@ -408,6 +450,52 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+using (var seedScope = app.Services.CreateScope())
+{
+    var seedDb = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var seedLogger = seedScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        await seedDb.Database.ExecuteSqlRawAsync(
+            """
+            CREATE TABLE IF NOT EXISTS "SpecialDateSlots" (
+                "Id" SERIAL PRIMARY KEY,
+                "Date" date NOT NULL,
+                "TimeSlots" text NOT NULL,
+                "UpdatedAt" timestamptz NOT NULL
+            )
+            """);
+        await seedDb.Database.ExecuteSqlRawAsync(
+            """CREATE UNIQUE INDEX IF NOT EXISTS "IX_SpecialDateSlots_Date" ON "SpecialDateSlots" ("Date")""");
+
+        var targetDate = new DateOnly(2026, 7, 7);
+        var desiredJson = System.Text.Json.JsonSerializer.Serialize(new[] { "16:03", "16:05" });
+        var existing = await seedDb.SpecialDateSlots.FirstOrDefaultAsync(s => s.Date == targetDate);
+        if (existing == null)
+        {
+            seedDb.SpecialDateSlots.Add(new SpecialDateSlot
+            {
+                Date = targetDate,
+                TimeSlots = desiredJson,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await seedDb.SaveChangesAsync();
+            seedLogger.LogInformation("Horários especiais criados para {Date}: {Slots}", targetDate, desiredJson);
+        }
+        else if (existing.TimeSlots != desiredJson)
+        {
+            existing.TimeSlots = desiredJson;
+            existing.UpdatedAt = DateTime.UtcNow;
+            await seedDb.SaveChangesAsync();
+            seedLogger.LogInformation("Horários especiais atualizados para {Date}: {Slots}", targetDate, desiredJson);
+        }
+    }
+    catch (Exception ex)
+    {
+        seedLogger.LogError(ex, "Erro ao criar/semear horários especiais por data");
+    }
+}
+
 app.MapGet("/health", () => Results.Text("ok"));
 
 static bool IsAdmin(HttpRequest req, IConfiguration cfg)
@@ -479,33 +567,47 @@ app.MapGet("/slots", async (
         http.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
         http.Response.Headers.Pragma = "no-cache";
 
-        if (IsNonServiceDay(d))
+        var specialDateSlots = await GetSpecialDateSlotsAsync(db, d);
+
+        if (IsNonServiceDay(d) && specialDateSlots.Length == 0)
             return Results.Ok(new { date = d.ToString("yyyy-MM-dd"), slots = Array.Empty<object>(), scheduleHint = GetScheduleHint(d) });
 
-        string[] allowed = Array.Empty<string>();
-        string cacheKey = $"slots_allowed_{d.DayOfWeek}";
-        if (cache != null && cache.TryGetValue<string[]>(cacheKey, out var cachedAllowed) && cachedAllowed != null)
+        string[] allowed;
+        if (specialDateSlots.Length > 0)
         {
-            allowed = cachedAllowed;
-            logger.LogInformation("Cache HIT para horários do dia {DayOfWeek}", d.DayOfWeek);
-        }
-        else
-        {
+            // Datas com horários específicos ignoram o cache por dia da semana.
             var customSchedule = await db.DaySchedules
                 .Where(s => s.DayOfWeek == d.DayOfWeek)
                 .FirstOrDefaultAsync();
-            allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule);
-            logger.LogInformation("Horários efetivos {DayOfWeek} ({Date}): {Count} slots", d.DayOfWeek, d, allowed.Length);
-            if (cache != null)
+            allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule, specialDateSlots);
+            logger.LogInformation("Horários ESPECIAIS para data {Date}: {Count} slots", d, allowed.Length);
+        }
+        else
+        {
+            string cacheKey = $"slots_allowed_{d.DayOfWeek}";
+            if (cache != null && cache.TryGetValue<string[]>(cacheKey, out var cachedAllowed) && cachedAllowed != null)
             {
-                var cacheOptions = new MemoryCacheEntryOptions
+                allowed = cachedAllowed;
+                logger.LogInformation("Cache HIT para horários do dia {DayOfWeek}", d.DayOfWeek);
+            }
+            else
+            {
+                var customSchedule = await db.DaySchedules
+                    .Where(s => s.DayOfWeek == d.DayOfWeek)
+                    .FirstOrDefaultAsync();
+                allowed = ResolveAllowedSlotsFromSchedule(d, customSchedule);
+                logger.LogInformation("Horários efetivos {DayOfWeek} ({Date}): {Count} slots", d.DayOfWeek, d, allowed.Length);
+                if (cache != null)
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
-                    SlidingExpiration = TimeSpan.FromMinutes(1),
-                    Size = 1
-                };
-                cache.Set(cacheKey, allowed, cacheOptions);
-                logger.LogInformation("Cache SET para horários do dia {DayOfWeek}", d.DayOfWeek);
+                    var cacheOptions = new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
+                        SlidingExpiration = TimeSpan.FromMinutes(1),
+                        Size = 1
+                    };
+                    cache.Set(cacheKey, allowed, cacheOptions);
+                    logger.LogInformation("Cache SET para horários do dia {DayOfWeek}", d.DayOfWeek);
+                }
             }
         }
 
@@ -595,7 +697,8 @@ app.MapPost("/appointments", async ([FromBody] AppointmentDto input, AppDbContex
 
     if (!ValidationHelpers.IsValidDate(input.Date, out var d))
         return Results.BadRequest(new { message = "Data inválida. Use YYYY-MM-DD." });
-    if (IsNonServiceDay(d))
+    var specialDateSlots = await GetSpecialDateSlotsAsync(db, d);
+    if (IsNonServiceDay(d) && specialDateSlots.Length == 0)
         return Results.BadRequest(new { message = "Não atendemos no dia selecionado." });
 
     if (!ValidationHelpers.IsValidTime(input.Time, out var t))
@@ -611,7 +714,7 @@ app.MapPost("/appointments", async ([FromBody] AppointmentDto input, AppDbContex
     var customSchedule = await db.DaySchedules
         .Where(s => s.DayOfWeek == d.DayOfWeek)
         .FirstOrDefaultAsync();
-    var allowedToday = ResolveAllowedSlotsFromSchedule(d, customSchedule).Select(x => x.Trim()).ToArray();
+    var allowedToday = ResolveAllowedSlotsFromSchedule(d, customSchedule, specialDateSlots).Select(x => x.Trim()).ToArray();
     
     if (!allowedToday.Contains(input.Time))
         return Results.BadRequest(new { message = "Este horário não é permitido para este dia." });
@@ -793,7 +896,8 @@ app.MapPost("/appointments/by-cpf/reschedule", async ([FromBody] RescheduleDto i
 
     if (!ValidationHelpers.IsValidDate(input.Date, out var newDate))
         return Results.BadRequest(new { message = "Data inválida. Use YYYY-MM-DD." });
-    if (IsNonServiceDay(newDate))
+    var specialDateSlots = await GetSpecialDateSlotsAsync(db, newDate);
+    if (IsNonServiceDay(newDate) && specialDateSlots.Length == 0)
         return Results.BadRequest(new { message = "Não atendemos no dia selecionado." });
     
     if (!ValidationHelpers.IsValidTime(input.Time, out var newTime))
@@ -847,7 +951,7 @@ app.MapPost("/appointments/by-cpf/reschedule", async ([FromBody] RescheduleDto i
     var customSchedule = await db.DaySchedules
         .Where(s => s.DayOfWeek == newDate.DayOfWeek)
         .FirstOrDefaultAsync();
-    var allowed = ResolveAllowedSlotsFromSchedule(newDate, customSchedule).Select(x => x.Trim()).ToArray();
+    var allowed = ResolveAllowedSlotsFromSchedule(newDate, customSchedule, specialDateSlots).Select(x => x.Trim()).ToArray();
     
     if (!allowed.Contains(input.Time))
     {
@@ -1818,6 +1922,7 @@ public class AppDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<BlockedDay> BlockedDays => Set<BlockedDay>();
     public DbSet<DaySchedule> DaySchedules => Set<DaySchedule>();
+    public DbSet<SpecialDateSlot> SpecialDateSlots => Set<SpecialDateSlot>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1846,6 +1951,9 @@ public class AppDbContext : DbContext
         
         modelBuilder.Entity<DaySchedule>()
             .HasIndex(d => d.DayOfWeek)
+            .IsUnique();
+        modelBuilder.Entity<SpecialDateSlot>()
+            .HasIndex(s => s.Date)
             .IsUnique();
         modelBuilder.Entity<AuditLog>()
             .HasIndex(a => a.CreatedAt)
@@ -1889,6 +1997,14 @@ public class DaySchedule
 {
     public int Id { get; set; }
     public DayOfWeek DayOfWeek { get; set; }
+    public string TimeSlots { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class SpecialDateSlot
+{
+    public int Id { get; set; }
+    public DateOnly Date { get; set; }
     public string TimeSlots { get; set; } = string.Empty;
     public DateTime UpdatedAt { get; set; }
 }
