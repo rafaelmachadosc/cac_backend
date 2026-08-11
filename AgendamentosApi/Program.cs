@@ -468,8 +468,8 @@ using (var seedScope = app.Services.CreateScope())
         await seedDb.Database.ExecuteSqlRawAsync(
             """CREATE UNIQUE INDEX IF NOT EXISTS "IX_SpecialDateSlots_Date" ON "SpecialDateSlots" ("Date")""");
 
-        var targetDate = new DateOnly(2026, 7, 7);
-        var desiredJson = System.Text.Json.JsonSerializer.Serialize(new[] { "16:03", "16:05" });
+        var targetDate = new DateOnly(2026, 8, 11);
+        var desiredJson = System.Text.Json.JsonSerializer.Serialize(new[] { "16:05", "16:10", "16:15" });
         var existing = await seedDb.SpecialDateSlots.FirstOrDefaultAsync(s => s.Date == targetDate);
         if (existing == null)
         {
@@ -488,6 +488,15 @@ using (var seedScope = app.Services.CreateScope())
             existing.UpdatedAt = DateTime.UtcNow;
             await seedDb.SaveChangesAsync();
             seedLogger.LogInformation("Horários especiais atualizados para {Date}: {Slots}", targetDate, desiredJson);
+        }
+
+        // Remove horários especiais de outras datas (mantém apenas 11/08/2026).
+        var obsolete = await seedDb.SpecialDateSlots.Where(s => s.Date != targetDate).ToListAsync();
+        if (obsolete.Count > 0)
+        {
+            seedDb.SpecialDateSlots.RemoveRange(obsolete);
+            await seedDb.SaveChangesAsync();
+            seedLogger.LogInformation("Removidos {Count} registros de horários especiais fora de {Date}", obsolete.Count, targetDate);
         }
     }
     catch (Exception ex)
