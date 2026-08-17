@@ -199,6 +199,9 @@ string[] AfternoonSlots = new[]{
     "16:00"
 };
 
+// Horários fixos sempre incluídos em qualquer dia liberado para agendamento.
+string[] FixedDailySlots = new[]{ "16:05","16:10","16:15" };
+
 static string[] FilterTuesdaySlots(string[] slots) =>
     slots
         .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -245,7 +248,12 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
         .ToArray();
 
     if (IsNonServiceDay(d))
-        return SortSlots(extra);
+    {
+        // Dia não-útil só fica liberado quando há horários especiais cadastrados.
+        if (extra.Length == 0)
+            return Array.Empty<string>();
+        return SortSlots(extra.Concat(FixedDailySlots).ToArray());
+    }
 
     string[] baseSlots;
     if (customSchedule != null &&
@@ -264,12 +272,12 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
         baseSlots = FilterTuesdaySlots(GetAllowedSlots(d));
     }
 
-    return extra.Length == 0 ? baseSlots : SortSlots(baseSlots.Concat(extra).ToArray());
+    return SortSlots(baseSlots.Concat(extra).Concat(FixedDailySlots).ToArray());
 }
 
 static string? GetScheduleHint(DateOnly d) =>
     d.DayOfWeek == DayOfWeek.Tuesday
-        ? "Terça: 10:00 às 11:55 e 13:30 às 16:00."
+        ? "Terça: 10:00 às 11:55 e 13:30 às 16:15."
         : null;
 
 using (var scope = app.Services.CreateScope())
