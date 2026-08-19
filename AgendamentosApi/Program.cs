@@ -150,8 +150,30 @@ app.Use(async (context, next) =>
 static string NormalizeCpf(string? cpf) => cpf is null ? "" : Regex.Replace(cpf, "[^0-9]", "");
 static string NormalizePhone(string? p) => p is null ? "" : Regex.Replace(p, "[^0-9]", "");
 static string ToLabel(string hhmm) { var p = hhmm.Split(':'); return $"{int.Parse(p[0])}H{(p[1]=="00"?"":p[1])}"; }
-// Apenas terças disponíveis para agendamento
+// Apenas terças disponíveis para agendamento.
+static readonly DateOnly TemporaryScheduleStart = new(2026, 8, 25);
+static readonly DateOnly TemporaryScheduleEnd = new(2026, 9, 29);
+
+static bool IsTemporarySchedulePeriod(DateOnly d) =>
+    d >= TemporaryScheduleStart && d <= TemporaryScheduleEnd;
+
+static bool UsesTemporaryTuesdaySchedule(DateOnly d) =>
+    IsTemporarySchedulePeriod(d) && d.DayOfWeek == DayOfWeek.Tuesday;
+
 static bool IsNonServiceDay(DateOnly d) => d.DayOfWeek != DayOfWeek.Tuesday;
+
+static string[] GenerateIntervalSlots(TimeOnly start, TimeOnly end, int intervalMinutes)
+{
+    var result = new List<string>();
+    for (var t = start; t <= end; t = t.AddMinutes(intervalMinutes))
+        result.Add(t.ToString("HH:mm", CultureInfo.InvariantCulture));
+    return result.ToArray();
+}
+
+static string[] GetTemporaryPeriodSlots() =>
+    GenerateIntervalSlots(new TimeOnly(9, 0), new TimeOnly(11, 50), 10)
+        .Concat(GenerateIntervalSlots(new TimeOnly(13, 30), new TimeOnly(16, 30), 10))
+        .ToArray();
 
 static string[]? ParseCsvLine(string line)
 {
@@ -247,6 +269,12 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
         .Select(s => s.Trim())
         .ToArray();
 
+    if (UsesTemporaryTuesdaySchedule(d))
+    {
+        var tempSlots = GetTemporaryPeriodSlots();
+        return extra.Length == 0 ? tempSlots : SortSlots(tempSlots.Concat(extra).ToArray());
+    }
+
     if (IsNonServiceDay(d))
     {
         // Dia não-útil só fica liberado quando há horários especiais cadastrados.
@@ -275,10 +303,14 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
     return SortSlots(baseSlots.Concat(extra).Concat(FixedDailySlots).ToArray());
 }
 
-static string? GetScheduleHint(DateOnly d) =>
-    d.DayOfWeek == DayOfWeek.Tuesday
-        ? "Terça: 10:00 às 11:55 e 13:30 às 16:15."
-        : null;
+static string? GetScheduleHint(DateOnly d)
+{
+    if (UsesTemporaryTuesdaySchedule(d))
+        return "Terça: manhã 9:00 às 11:50 e tarde 13:30 às 16:30 (intervalos de 10 min).";
+    if (d.DayOfWeek == DayOfWeek.Tuesday)
+        return "Terça: 10:00 às 11:55 e 13:30 às 16:15.";
+    return null;
+}
 
 using (var scope = app.Services.CreateScope())
 {
@@ -601,7 +633,9 @@ app.MapGet("/slots", async (
         }
         else
         {
-            string cacheKey = $"slots_allowed_{d.DayOfWeek}";
+            string cacheKey = UsesTemporaryTuesdaySchedule(d)
+                ? $"slots_allowed_date_{d:yyyy-MM-dd}"
+                : $"slots_allowed_{d.DayOfWeek}";
             if (cache != null && cache.TryGetValue<string[]>(cacheKey, out var cachedAllowed) && cachedAllowed != null)
             {
                 allowed = cachedAllowed;
