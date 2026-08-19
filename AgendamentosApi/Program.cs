@@ -151,11 +151,8 @@ static string NormalizeCpf(string? cpf) => cpf is null ? "" : Regex.Replace(cpf,
 static string NormalizePhone(string? p) => p is null ? "" : Regex.Replace(p, "[^0-9]", "");
 static string ToLabel(string hhmm) { var p = hhmm.Split(':'); return $"{int.Parse(p[0])}H{(p[1]=="00"?"":p[1])}"; }
 // Apenas terças disponíveis para agendamento.
-static readonly DateOnly TemporaryScheduleStart = new(2026, 8, 25);
-static readonly DateOnly TemporaryScheduleEnd = new(2026, 9, 29);
-
 static bool IsTemporarySchedulePeriod(DateOnly d) =>
-    d >= TemporaryScheduleStart && d <= TemporaryScheduleEnd;
+    d >= new DateOnly(2026, 8, 25) && d <= new DateOnly(2026, 9, 29);
 
 static bool UsesTemporaryTuesdaySchedule(DateOnly d) =>
     IsTemporarySchedulePeriod(d) && d.DayOfWeek == DayOfWeek.Tuesday;
