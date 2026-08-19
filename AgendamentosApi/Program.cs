@@ -169,7 +169,7 @@ static string[] GenerateIntervalSlots(TimeOnly start, TimeOnly end, int interval
 
 static string[] GetTemporaryPeriodSlots() =>
     GenerateIntervalSlots(new TimeOnly(9, 0), new TimeOnly(11, 50), 10)
-        .Concat(GenerateIntervalSlots(new TimeOnly(13, 30), new TimeOnly(16, 30), 10))
+        .Concat(GenerateIntervalSlots(new TimeOnly(13, 30), new TimeOnly(17, 0), 10))
         .ToArray();
 
 static string[]? ParseCsvLine(string line)
@@ -303,7 +303,7 @@ string[] ResolveAllowedSlotsFromSchedule(DateOnly d, DaySchedule? customSchedule
 static string? GetScheduleHint(DateOnly d)
 {
     if (UsesTemporaryTuesdaySchedule(d))
-        return "Terça: manhã 9:00 às 11:50 e tarde 13:30 às 16:30 (intervalos de 10 min).";
+        return "Terça: manhã 9:00 às 11:50 e tarde 13:30 às 17:00 (intervalos de 10 min).";
     if (d.DayOfWeek == DayOfWeek.Tuesday)
         return "Terça: 10:00 às 11:55 e 13:30 às 16:15.";
     return null;
